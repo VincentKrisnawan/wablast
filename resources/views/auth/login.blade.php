@@ -43,7 +43,7 @@
         </div>
 
         <footer class="footer">
-            &copy; {{ date('Y') }} PT KamarOTO Teknologi Indonesia. All rights reserved.
+            &copy; {{ date('Y') }} KamarOTO. All rights reserved.
         </footer>
     </div>
 </body>
