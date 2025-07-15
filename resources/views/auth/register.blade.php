@@ -32,13 +32,13 @@
                     @endif
 
                     <div class="input-group">
-                        <label for="name">Nama Lengkap</label>
+                        <label for="name">Username</label>
                         <input type="text" name="name" id="name" required value="{{ old('name') }}">
                     </div>
 
                     <div class="input-group">
-                        <label for="username">Username</label>
-                        <input type="username" name="username" id="username" required">
+                        <label for="username">Email </label>
+                        <input type="email" name="email" id="username" required">
                     </div>
 
                     <div class="input-group">

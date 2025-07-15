@@ -9,6 +9,16 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    public function showRegistrationForm()
+    {
+        return view('auth.register');
+    }
+
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
+
     public function register(Request $request)
     {
         $request->validate([

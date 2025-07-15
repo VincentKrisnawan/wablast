@@ -7,9 +7,15 @@ use App\Http\Controllers\MessageSessionController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\MessageController;
 
-//auth
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+
+
+// Auth logic
+Route::get('/', [AuthController::class, 'showLoginForm']);
+Route::get('/register', [AuthController::class, 'showRegisterForm']);
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+
 Route::post('/logout', [AuthController::class, 'logout']);
 
 // Upload kontak
@@ -28,10 +34,3 @@ Route::get('/sessions/{id}/template', [MessageTemplateController::class, 'show']
 Route::post('/sessions/{id}/send', [MessageController::class, 'send']);
 Route::get('/sessions/{id}/report', [MessageController::class, 'report']);
 
-Route::get('/', function () {
-    return view('auth.login');
-})->name('login');
-
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');

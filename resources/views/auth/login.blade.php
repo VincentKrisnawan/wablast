@@ -23,7 +23,7 @@
 
                     <div class="input-group">
                         <label for="username">Username</label>
-                        <input type="username" name="username" id="username" required>
+                        <input type="text" name="name" id="username" required>
                     </div>
 
                     <div class="input-group">
