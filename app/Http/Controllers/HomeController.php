@@ -23,31 +23,27 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Ambil batch upload terakhir milik user yang sedang login
         $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
         
         $sessions = [];
-        $templateText = ''; // Siapkan variabel template dengan nilai default kosong
+        $templateText = '';
 
         if ($latestBatch) {
-            // Ambil sesi untuk batch terakhir
             $sessions = $latestBatch->sessions()->withCount(['messages' => function ($query) {
                 $query->where('status', 'sent');
             }])->get();
 
-            // Ambil juga template pesan yang sudah tersimpan untuk batch ini
             $template = MessageTemplate::where('batch_id', $latestBatch->id)->first();
             if ($template) {
                 $templateText = $template->template;
             }
         }
         
-        // Kirim semua data yang dibutuhkan ke view
         return view('pages.home', [ 
             'sessions' => $sessions,
             'latest_batch' => $latestBatch,
             'latest_batch_id' => $latestBatch ? $latestBatch->id : null,
-            'template_text' => $templateText, // <-- Kirim teks template ke view
+            'template_text' => $templateText,
         ]);
     }
 
@@ -56,7 +52,6 @@ class HomeController extends Controller
      */
     public function upload(Request $request)
     {
-        // ... (Tidak ada perubahan di method ini)
         $request->validate([
             'file_kontak' => 'required|mimes:csv,xlsx,xls',
         ]);
@@ -65,15 +60,24 @@ class HomeController extends Controller
 
         try {
             $file = $request->file('file_kontak');
-            $filePath = $file->getRealPath();
+            
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            
+            // PERBAIKAN: Simpan langsung ke folder 'uploads' tanpa subfolder user
+            $internalPath = $file->storeAs('uploads', $fileName, 'public'); 
 
+            // Dapatkan URL publik yang benar (misal: '/storage/uploads/namafile.xlsx')
+            $publicUrl = Storage::url($internalPath);
+
+            // 1. Simpan informasi batch upload dengan URL publik
             $batch = UploadBatch::create([
                 'user_id'        => Auth::id(),
-                'filename'       => time() . '_' . $file->getClientOriginalName(),
+                'filename'       => $publicUrl, // <-- Simpan URL publik ke database
                 'total_contacts' => 0,
             ]);
 
-            $spreadsheet = IOFactory::load($filePath);
+            // 2. Baca file menggunakan path internal yang asli
+            $spreadsheet = IOFactory::load(storage_path('app/public/' . $internalPath));
             $sheet = $spreadsheet->getActiveSheet();
             
             $headerRow = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', null, true, false)[0];
@@ -138,12 +142,9 @@ class HomeController extends Controller
         }
     }
 
-    /**
-     * Menampilkan halaman detail kontak dari sebuah batch.
-     */
+    // ... (sisa method lainnya tidak berubah)
     public function showContacts(UploadBatch $batch)
     {
-        // ... (Tidak ada perubahan di method ini)
         $contacts = $batch->contacts()->paginate(50);
         $jsonColumns = [];
         foreach ($contacts as $contact) {
@@ -161,25 +162,18 @@ class HomeController extends Controller
         ]);
     }
 
-    /**
-     * Menghapus sesi pengiriman tertentu BESERTA kontaknya.
-     */
     public function destroySession(MessageSession $session)
     {
-        // Otorisasi: Pastikan user yang login adalah pemilik batch dari sesi ini.
         if ($session->batch->user_id !== Auth::id()) {
             return back()->with('error', 'Anda tidak diizinkan menghapus sesi ini.');
         }
 
-        // Mulai transaksi database untuk memastikan semua operasi berhasil
         DB::beginTransaction();
 
         try {
             $contactsPerSession = 100;
-            // Hitung berapa banyak kontak yang harus dilewati (offset)
             $offset = ($session->session_number - 1) * $contactsPerSession;
 
-            // Ambil ID kontak yang akan dihapus berdasarkan batch, urutan, dan rentang sesi
             $contactIdsToDelete = UploadContact::where('batch_id', $session->batch_id)
                                               ->orderBy('id', 'asc')
                                               ->skip($offset)
@@ -188,36 +182,27 @@ class HomeController extends Controller
             
             $deletedCount = 0;
             if ($contactIdsToDelete->isNotEmpty()) {
-                // Hapus kontak yang sesuai
                 $deletedCount = UploadContact::whereIn('id', $contactIdsToDelete)->delete();
             }
 
-            // Hapus sesi itu sendiri
             $session->delete();
 
-            // Perbarui total kontak di batch induk
             $batch = $session->batch;
             $batch->total_contacts -= $deletedCount;
             $batch->save();
 
-            // Jika semua berhasil, simpan perubahan ke database
             DB::commit();
 
             return redirect()->route('home')->with('success', 'Sesi dan kontaknya berhasil dihapus.');
 
         } catch (\Exception $e) {
-            // Jika terjadi error, batalkan semua operasi
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus sesi: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Menyimpan template pesan ke database.
-     */
     public function storeTemplate(Request $request)
     {
-        // ... (Tidak ada perubahan di method ini)
         $request->validate([
             'template_text' => 'required|string|min:10',
             'batch_id'      => 'required|exists:upload_batches,id'
@@ -231,13 +216,8 @@ class HomeController extends Controller
         return back()->with('success', 'Template pesan berhasil disimpan!');
     }
 
-
-    /**
-     * Membersihkan semua data upload dan file yang tersimpan.
-     */
     public function cleanup()
     {
-        // ... (Tidak ada perubahan di method ini)
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
             DB::table('upload_contacts')->truncate();
