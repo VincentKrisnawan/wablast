@@ -9,14 +9,15 @@
         public function up(): void
     {
         Schema::table('message_templates', function (Blueprint $table) {
-            // PERBAIKAN: Hapus foreign key constraint terlebih dahulu
-            $table->dropForeign(['batch_id']);
-
             // Setelah relasi dihapus, baru hapus kolomnya
-            $table->dropColumn('batch_id');
+            if (Schema::hasColumn('message_templates', 'batch_id')) {
+                $table->dropColumn('batch_id');
+            }
 
             // Tambahkan kolom user_id yang baru
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            if (!Schema::hasColumn('message_templates', 'user_id')) {
+                $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            }
         });
     }
 
