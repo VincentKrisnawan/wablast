@@ -7,18 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/home.css') }}"> 
     <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <x-navbar />
 
     <div class="container my-4">
-        
-        {{-- Grid Konten Utama --}}
         <div class="row g-4">
-            {{-- Kolom Kiri untuk Upload dan Sesi --}}
             <div class="col-lg-8">
                 <div class="d-flex flex-column gap-4">
                     <div class="card-item">
@@ -54,7 +51,9 @@
                                     <tr>
                                         <td>{{ $session->session_number }}</td>
                                         <td>
-                                            @if($loop->last && $latest_batch && $latest_batch->total_contacts % 100 != 0)
+                                            {{-- PERBAIKAN: Ganti $loop->last dengan perbandingan nomor sesi --}}
+                                            {{-- Ini akan memastikan sisa kontak hanya ditampilkan di sesi terakhir yang sebenarnya --}}
+                                            @if($latest_batch && $session->session_number == $total_session_count && $latest_batch->total_contacts % 100 != 0)
                                                 {{ $latest_batch->total_contacts % 100 }}
                                             @else
                                                 100
@@ -70,7 +69,7 @@
                                             <span class="status {{ $statusClass }}">{{ strtoupper($session->status) }}</span>
                                         </td>
                                         <td>
-                                            <button class="btn btn-kirim btn-sm" data-session-id="{{ $session->id }}" @if($session->status != 'pending') disabled @endif>Kirim</button>
+                                            <button class="btn btn-kirim btn-sm" @if($session->status != 'pending') disabled @endif>Kirim</button>
                                             <form action="{{ route('session.destroy', $session) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Anda yakin ingin menghapus sesi ini?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -88,19 +87,22 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{-- Tampilkan link pagination di bawah tabel --}}
+                        @if ($sessions->hasPages())
+                            <div class="mt-4 d-flex justify-content-center">
+                                {{ $sessions->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
 
-            {{-- Kolom Kanan untuk Template --}}
             <div class="col-lg-4">
                 <div class="card-item">
                     <h5 class="card-title">Template Pesan</h5>
                     <form action="{{ route('template.store') }}" method="POST">
                         @csrf
-                        
-                        {{-- PERBAIKAN: Hapus input batch_id yang tersembunyi dari sini --}}
-
                         <div class="mb-3">
                             <label for="template_text" class="form-label">Isi Pesan Anda:</label>
                             <textarea id="template_text" name="template_text" class="message-box @error('template_text') is-invalid @enderror" rows="10" placeholder="Tulis template pesan Anda di sini..." required>{{ $template_text }}</textarea>
@@ -114,13 +116,11 @@
             </div>
         </div>
 
-        {{-- Bagian Reset Data --}}
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card-item bg-light">
                      <h5 class="card-title text-danger">Zona Berbahaya</h5>
                      <p class="text-muted">Tindakan ini akan menghapus semua batch, kontak, sesi, template, dan file yang telah diupload. Tindakan ini tidak dapat dibatalkan.</p>
-                     {{-- PERBAIKAN: Hapus onsubmit dan tambahkan id="reset-form" --}}
                      <form id="reset-form" action="{{ route('data.cleanup') }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-danger w-100">Reset Semua Data & File</button>
@@ -131,65 +131,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const sendButtons = document.querySelectorAll('.btn-kirim');
-
-            sendButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const sessionId = this.dataset.sessionId;
-                    const url = `/sessions/${sessionId}/send`;
-
-                    button.disabled = true; // Disable the button immediately
-
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            // If response is not OK (e.g., 400, 500), parse error message
-                            return response.json().then(errorData => {
-                                throw new Error(errorData.message || 'Terjadi kesalahan saat mengirim pesan.');
-                            });
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // If we reach here, the request was successful
-                        const row = button.closest('tr');
-                        const statusCell = row.querySelector('.status');
-
-                        // Update status to in_progress only on success
-                        statusCell.textContent = 'IN_PROGRESS';
-                        statusCell.classList.remove('status-pending', 'status-berhasil');
-                        statusCell.classList.add('status-inprogress');
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: data.message,
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal!',
-                            text: error.message || 'Terjadi kesalahan yang tidak terduga.'
-                        });
-                        // Re-enable button on any error
-                        button.disabled = false;
-                    });
-                });
-            });
-        });
-
-        // Periksa apakah ada pesan 'success' dari session
         @if (session('success'))
             Swal.fire({
                 icon: 'success',
@@ -200,7 +142,6 @@
             });
         @endif
 
-        // Periksa apakah ada pesan 'error' dari session
         @if (session('error'))
             Swal.fire({
                 icon: 'error',
@@ -209,10 +150,8 @@
             });
         @endif
 
-        // PERBAIKAN: Tambahkan event listener untuk form reset
         document.getElementById('reset-form').addEventListener('submit', function(event) {
-            event.preventDefault(); // Mencegah form dari submit langsung
-
+            event.preventDefault();
             Swal.fire({
                 title: 'Anda Yakin?',
                 text: "Semua data dan file yang terupload akan dihapus secara permanen!",
@@ -224,7 +163,6 @@
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Jika user menekan "Ya", submit form secara manual
                     event.target.submit();
                 }
             });

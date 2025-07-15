@@ -23,45 +23,36 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Logika untuk batch dan sesi tidak berubah
         $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
-        $sessions = $latestBatch ? $latestBatch->sessions()->withCount(['messages' => function ($query) {
-            $query->where('status', 'sent');
-        }])->get() : [];
+        
+        $sessions = collect(); // Gunakan koleksi kosong sebagai default
+        $templateText = '';
+        $totalSessionCount = 0; // Default total sesi
 
-        // PERBAIKAN: Ambil template berdasarkan user yang login, bukan batch
-        $template = MessageTemplate::where('user_id', Auth::id())->first();
-        $templateText = $template ? $template->template : '';
+        if ($latestBatch) {
+            $sessions = $latestBatch->sessions()->withCount(['messages' => function ($query) {
+                $query->where('status', 'sent');
+            }])->paginate(10);
 
+            // PERBAIKAN: Hitung jumlah total sesi untuk batch ini
+            $totalSessionCount = ceil($latestBatch->total_contacts / 100);
+
+            $template = MessageTemplate::where('user_id', Auth::id())->first();
+            if ($template) {
+                $templateText = $template->template;
+            }
+        }
+        
         return view('pages.home', [ 
             'sessions' => $sessions,
             'latest_batch' => $latestBatch,
             'latest_batch_id' => $latestBatch ? $latestBatch->id : null,
-            'template_text' => $templateText, // Kirim template yang persisten
+            'template_text' => $templateText,
+            'total_session_count' => $totalSessionCount, // Kirim total sesi ke view
         ]);
     }
 
-    /**
-     * Menyimpan template pesan ke database.
-     */
-    public function storeTemplate(Request $request)
-    {
-        // PERBAIKAN: Validasi hanya teks, karena kita akan menggunakan ID user yang login
-        $request->validate([
-            'template_text' => 'required|string|min:10',
-        ]);
-
-        // PERBAIKAN: Simpan atau perbarui template berdasarkan user_id
-        MessageTemplate::updateOrCreate(
-            ['user_id' => Auth::id()], // Kunci untuk mencari record
-            ['template' => $request->template_text] // Data untuk diupdate atau dibuat
-        );
-
-        return back()->with('success', 'Template pesan berhasil disimpan!');
-    }
-
-    // ... (Sisa method lainnya seperti upload, destroySession, dll. tidak berubah)
-    
+    // ... (sisa method lainnya tidak berubah)
     public function upload(Request $request)
     {
         $request->validate([
@@ -199,6 +190,20 @@ class HomeController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus sesi: ' . $e->getMessage());
         }
+    }
+
+    public function storeTemplate(Request $request)
+    {
+        $request->validate([
+            'template_text' => 'required|string|min:10',
+        ]);
+
+        MessageTemplate::updateOrCreate(
+            ['user_id' => Auth::id()],
+            ['template' => $request->template_text]
+        );
+
+        return back()->with('success', 'Template pesan berhasil disimpan!');
     }
 
     public function cleanup()
