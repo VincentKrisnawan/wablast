@@ -21,21 +21,21 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    // // Upload kontak
-    // Route::post('/upload-contacts', [UploadContactController::class, 'upload']);
-    // Route::get('/upload-batches/{id}/contacts', [UploadContactController::class, 'getContacts']);
+    // Upload kontak
+    Route::post('/upload-contacts', [UploadContactController::class, 'upload']);
+    Route::get('/upload-batches/{id}/contacts', [UploadContactController::class, 'getContacts']);
 
-    // // Sesi
-    // Route::post('/upload-batches/{id}/generate-sessions', [MessageSessionController::class, 'generateSessions']);
-    // Route::get('/upload-batches/{id}/sessions', [MessageSessionController::class, 'getSessions']);
+    // Sesi
+    Route::post('/upload-batches/{id}/generate-sessions', [MessageSessionController::class, 'generateSessions']);
+    Route::get('/upload-batches/{id}/sessions', [MessageSessionController::class, 'getSessions']);
 
-    // // Template pesan
-    // Route::post('/sessions/{id}/template', [MessageTemplateController::class, 'store']);
-    // Route::get('/sessions/{id}/template', [MessageTemplateController::class, 'show']);
+    // Template pesan
+    Route::post('/sessions/{id}/template', [MessageTemplateController::class, 'store']);
+    Route::get('/sessions/{id}/template', [MessageTemplateController::class, 'show']);
 
-    // // Kirim pesan dan laporan
-    // Route::post('/sessions/{id}/send', [MessageController::class, 'send']);
-    // Route::get('/sessions/{id}/report', [MessageController::class, 'report']);
+    // Kirim pesan dan laporan
+    Route::post('/sessions/{id}/send', [MessageController::class, 'send']);
+    Route::get('/sessions/{id}/report', [MessageController::class, 'report']);
 
     Route::get('/home', function () {
         return view('pages.home');
