@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - My Laravel App</title>
     <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/auth_content.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="page-wrapper">
         <div class="main-content">
-            <div class="content-container">
-                <h1>WhatsApp Blast - KamarOTO</h1>
-                <p>Sistem Informasi Internal untuk mengelola dan menjalankan WhatsApp Blast — solusi efektif dalam mengirim pesan broadcast ke pelanggan.</p>
-                <!-- Kamu bisa tambahkan ilustrasi, gambar, atau logo di sini -->
-            </div>
+            <x-auth_content />
 
             <div class="login-container">
                 <form method="POST" action="{{ route('register') }}">
@@ -56,7 +53,7 @@
                     </div>
 
                     <div class="bottom-link">
-                        Sudah punya akun? <a href="{{ route('login') }}">Login</a>
+                        Sudah punya akun? <a href="/">Login</a>
                     </div>
                 </form>
             </div>

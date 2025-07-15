@@ -9,7 +9,7 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    public function showRegistrationForm()
+    public function showRegisterForm()
     {
         return view('auth.register');
     }
