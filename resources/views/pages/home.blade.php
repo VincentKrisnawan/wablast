@@ -98,9 +98,9 @@
                     <h5 class="card-title">Template Pesan</h5>
                     <form action="{{ route('template.store') }}" method="POST">
                         @csrf
-                        @if($latest_batch_id)
-                            <input type="hidden" name="batch_id" value="{{ $latest_batch_id }}">
-                        @endif
+                        
+                        {{-- PERBAIKAN: Hapus input batch_id yang tersembunyi dari sini --}}
+
                         <div class="mb-3">
                             <label for="template_text" class="form-label">Isi Pesan Anda:</label>
                             <textarea id="template_text" name="template_text" class="message-box @error('template_text') is-invalid @enderror" rows="10" placeholder="Tulis template pesan Anda di sini..." required>{{ $template_text }}</textarea>
@@ -108,7 +108,7 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-simpan" @if(!$latest_batch_id) disabled @endif>Simpan Template</button>
+                        <button type="submit" class="btn btn-simpan">Simpan Template</button>
                     </form>
                 </div>
             </div>

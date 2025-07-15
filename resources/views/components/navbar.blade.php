@@ -30,11 +30,9 @@
                     Tombol "Lihat Data Terakhir" ini akan muncul secara dinamis.
                     Variabel $latest_batch_id disediakan secara global oleh AppServiceProvider.
                 --}}
-                @if (isset($latest_batch_id) && $latest_batch_id)
-                    <li class="nav-item">
-                        <a href="{{ route('contacts.show', ['batch' => $latest_batch_id]) }}" class="btn btn-outline-primary btn-sm">Lihat Data Terakhir</a>
-                    </li>
-                @endif
+                <li class="nav-item">
+                    <a href="{{ route('contacts.all') }}" class="nav-link">Lihat Semua Data</a>
+                </li>
                 
                 <li class="nav-item ms-2">
                     {{-- Form untuk logout yang aman menggunakan metode POST --}}

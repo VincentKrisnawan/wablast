@@ -55,8 +55,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cleanup', [HomeController::class, 'cleanup'])->name('data.cleanup');
 
     // {batch} akan otomatis di-resolve menjadi instance UploadBatch
-    Route::get('/batch/{batch}/contacts', [HomeController::class, 'showContacts'])->name('contacts.show');
+    // Route::get('/batch/{batch}/contacts', [HomeController::class, 'showContacts'])->name('contacts.show');
     Route::delete('/session/{session}/delete', [HomeController::class, 'destroySession'])->name('session.destroy');
+    Route::get('/contacts', [HomeController::class, 'showAllContacts'])->name('contacts.all');
 
 });
 

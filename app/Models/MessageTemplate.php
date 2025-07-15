@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Models;
+    namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Model;
 
-class MessageTemplate extends Model
-{
-    protected $fillable = ['batch_id', 'template'];
-
-    public function batch()
+    class MessageTemplate extends Model
     {
-        return $this->belongsTo(UploadBatch::class, 'batch_id');
-    }
-}
+        // Pastikan 'user_id' ada di sini dan hapus 'batch_id'
+        protected $fillable = ['user_id', 'template'];
 
+        // Relasi ke User (opsional tapi bagus untuk dimiliki)
+        public function user()
+        {
+            return $this->belongsTo(User::class);
+        }
+    }

@@ -47,18 +47,25 @@ return [
             'report' => false,
         ],
 
-        's3' => [
-            'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
-            'report' => false,
-        ],
+        /*
+        |--------------------------------------------------------------------------
+        | PERBAIKAN: Konfigurasi S3 diberi komentar untuk menghindari error.
+        | Hapus komentar jika Anda ingin menggunakannya dan pastikan semua
+        | variabel environment (AWS_...) sudah diatur di file .env Anda.
+        |--------------------------------------------------------------------------
+        */
+        // 's3' => [
+        //     'driver' => 's3',
+        //     'key' => env('AWS_ACCESS_KEY_ID'),
+        //     'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        //     'region' => env('AWS_DEFAULT_REGION'),
+        //     'bucket' => env('AWS_BUCKET'),
+        //     'url' => env('AWS_URL'),
+        //     'endpoint' => env('AWS_ENDPOINT'),
+        //     'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+        //     'throw' => false,
+        //     'report' => false,
+        // ],
 
     ],
 
@@ -74,7 +81,8 @@ return [
     */
 
     'links' => [
-        public_path('uploads') => storage_path('app/public'),
+        // PERBAIKAN: Link ini akan membuat public/uploads -> storage/app/public/uploads
+        public_path('uploads') => storage_path('app/public/uploads'),
     ],
 
 ];

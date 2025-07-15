@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View; // <-- 1. Import View Facade
 use Illuminate\Support\Facades\Auth; // <-- 2. Import Auth Facade
 use App\Models\UploadBatch;          // <-- 3. Import UploadBatch Model
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('latest_batch_id', null);
             }
         });
+        Paginator::useBootstrapFive();
     }
 }
