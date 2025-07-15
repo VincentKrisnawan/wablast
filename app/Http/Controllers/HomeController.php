@@ -25,7 +25,7 @@ class HomeController extends Controller
     {
         $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
         
-        $sessions = collect(); // Gunakan koleksi kosong sebagai default
+        $sessions = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1); // Inisialisasi dengan paginator kosong
         $templateText = '';
         $totalSessionCount = 0; // Default total sesi
 
