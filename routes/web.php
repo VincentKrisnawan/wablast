@@ -1,6 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UploadContactController;
+use App\Http\Controllers\MessageSessionController;
+use App\Http\Controllers\MessageTemplateController;
+use App\Http\Controllers\MessageController;
 
 Route::get('/', function () {
     return view('welcome');
