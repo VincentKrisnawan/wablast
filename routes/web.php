@@ -7,10 +7,6 @@ use App\Http\Controllers\MessageSessionController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\MessageController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
 //auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -32,7 +28,7 @@ Route::get('/sessions/{id}/template', [MessageTemplateController::class, 'show']
 Route::post('/sessions/{id}/send', [MessageController::class, 'send']);
 Route::get('/sessions/{id}/report', [MessageController::class, 'report']);
 
-Route::get('/login', function () {
+Route::get('/', function () {
     return view('auth.login');
 })->name('login');
 

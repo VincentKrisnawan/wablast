@@ -1,26 +1,71 @@
+/* Reset */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-body {
+html, body {
+    height: 100%;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #F38527, #a35007);
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-left: 40px;
+    padding-right: 40px;
+    background: linear-gradient(135deg, #f97316, #f59e0b);
+}
+
+/* Kontainer Utama */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    padding: 40px 20px;
+    
+}
+
+/* Konten Kiri */
+.content-container {
+    flex: 1;
+    background: transparent;
+    /* background-color: #fff; */
+    color: #fff;
+    padding: 40px 30px;
+    margin: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 16px;
+}
+
+.content-container h1 {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+.content-container p {
+    font-size: 16px;
+    max-width: 400px;
+}
+
+/* Login Kanan */
 .login-container {
     background: #fff;
     padding: 40px 30px;
     border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     width: 100%;
-    max-width: 420px;
-    animation: fadeIn 0.5s ease;
+    max-width: 400px;
+    justify-content: center;
+    flex-direction: row;
+    
+
 }
 
 .login-container h2 {
@@ -52,13 +97,13 @@ body {
 }
 
 .input-group input:focus {
-    border-color: #F38527;
+    border-color: #f97316;
 }
 
 .input-group button {
     width: 100%;
     padding: 12px;
-    background: #F38527;
+    background: #f97316;
     color: white;
     border: none;
     border-radius: 8px;
@@ -69,7 +114,7 @@ body {
 }
 
 .input-group button:hover {
-    background: #a35007;
+    background: #ea580c;
 }
 
 .bottom-link {
@@ -79,7 +124,7 @@ body {
 }
 
 .bottom-link a {
-    color: #F38527;
+    color: #f97316;
     text-decoration: none;
     font-weight: 500;
 }
@@ -88,30 +133,35 @@ body {
     text-decoration: underline;
 }
 
-.error {
-    background: #ffe5e5;
-    color: #c53030;
-    border: 1px solid #f5c6cb;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
+/* Footer */
 .footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    /* background-color: #f0f0f0; */
     text-align: center;
-    padding: 12px;
+    padding: 16px;
     font-size: 14px;
-    color: #ffffff;
-    /* box-shadow: 0 -2px 5px rgba(0,0,0,0.1); */
+    color: #fff;
+    background-color: transparent;
+    /* border-top: 1px solid #e0e0e0; */
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Responsif */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .content-container {
+        text-align: center;
+        padding-bottom: 30px;
+    }
+
+    .content-container h1 {
+        font-size: 24px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 100%;
+    }
 }
