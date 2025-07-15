@@ -1,5 +1,6 @@
 - build a bussiness logic to sending whatsapp messages to recepient
 - write code to MessageController
+- the button send are alvailable on resources/views/pages/home.blade.php with class 'btn btn-kirim btn-sm'
 - The logic is that from a single message session that has been created contains 100 recipients, in that session there is a name, and also a recipient number. Send a message with a flow every 5 messages the system sends will give a 30-second pause before sending the next message, continuing to repeat until the session is over
 - And for the message template to be sent is in the table messages_templates with the 'template' column, also create a function to call the message to be sent in the database
 - for the records i'm using third party API called WAHA an unofficial whatsapp api used for sending whatsapp messages, the session named 'default' with 'chatId' 6285156796935@c.us

@@ -6,6 +6,8 @@ use App\Models\Message;
 use App\Models\MessageSession;
 use App\Models\UploadContact;
 use App\Models\MessageTemplate;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MessageController extends Controller
@@ -24,6 +26,9 @@ class MessageController extends Controller
             ->take(100)
             ->get();
 
+        $session->update(['status' => 'in_progress', 'started_at' => now()]);
+
+        $messageCount = 0;
         foreach ($contacts as $contact) {
             $text = $template->template;
 
@@ -33,22 +38,49 @@ class MessageController extends Controller
                 }
             }
 
+            $chatId = $contact->no_hp . '@c.us';
+            $status = 'failed';
+
+            try {
+                $response = Http::withHeaders([
+                    'X-Api-Key' => 'admin', // Replace with your actual WAHA API Key if required
+                ])->post('http://localhost:3000/api/sendText', [
+                    'session' => 'default',
+                    'chatId' => $chatId,
+                    'text' => $text,
+                ]);
+
+                if ($response->successful()) {
+                    $status = 'sent';
+                    Log::info("Message sent to {$chatId}: " . $response->body());
+                } else {
+                    Log::error("Failed to send message to {$chatId}: " . $response->status() . " - " . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Exception while sending message to {$chatId}: " . $e->getMessage());
+            }
+
             Message::create([
                 'session_id' => $session->id,
                 'contact_id' => $contact->id,
                 'message_text' => $text,
-                'status' => 'sent',
+                'status' => $status,
                 'sent_at' => now(),
             ]);
+
+            $messageCount++;
+
+            if ($messageCount % 5 == 0) {
+                sleep(30);
+            }
         }
 
         $session->update([
             'status' => 'done',
-            'started_at' => now(),
-            'ended_at' => now()->addMinutes(49),
+            'ended_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Pesan sesi ini telah dikirim.']);
+        return response()->json(['message' => 'Pesan sesi ini telah selesai dikirim.']);
     }
 
     public function report($session_id)

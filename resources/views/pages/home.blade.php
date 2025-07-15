@@ -70,7 +70,7 @@
                                             <span class="status {{ $statusClass }}">{{ strtoupper($session->status) }}</span>
                                         </td>
                                         <td>
-                                            <button class="btn btn-kirim btn-sm" @if($session->status != 'pending') disabled @endif>Kirim</button>
+                                            <button class="btn btn-kirim btn-sm" data-session-id="{{ $session->id }}" @if($session->status != 'pending') disabled @endif>Kirim</button>
                                             <form action="{{ route('session.destroy', $session) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Anda yakin ingin menghapus sesi ini?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -133,6 +133,62 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sendButtons = document.querySelectorAll('.btn-kirim');
+
+            sendButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const sessionId = this.dataset.sessionId;
+                    const url = `/sessions/${sessionId}/send`;
+
+                    button.disabled = true; // Disable the button immediately
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // If response is not OK (e.g., 400, 500), parse error message
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Terjadi kesalahan saat mengirim pesan.');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // If we reach here, the request was successful
+                        const row = button.closest('tr');
+                        const statusCell = row.querySelector('.status');
+
+                        // Update status to in_progress only on success
+                        statusCell.textContent = 'IN_PROGRESS';
+                        statusCell.classList.remove('status-pending', 'status-berhasil');
+                        statusCell.classList.add('status-inprogress');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: data.message,
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: error.message || 'Terjadi kesalahan yang tidak terduga.'
+                        });
+                        // Re-enable button on any error
+                        button.disabled = false;
+                    });
+                });
+            });
+        });
+
         // Periksa apakah ada pesan 'success' dari session
         @if (session('success'))
             Swal.fire({
