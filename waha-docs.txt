@@ -1,0 +1,880 @@
+Session webhooks
+You can define webhooks configuration per session when you start it with POST /api/sessions/ request data.
+
+Here’s a simple example:
+
+
+{
+  "name": "default",
+  "config": {
+    "webhooks": [
+      {
+        "url": "https://webhook.site/11111111-1111-1111-1111-11111111",
+        "events": [
+          "message"
+        ]
+      }
+    ]
+  }
+}
+Here’s available configuration options for webhooks
+
+
+{
+  "name": "default",
+  "config": {
+    "webhooks": [
+      {
+        "url": "https://webhook.site/11111111-1111-1111-1111-11111111",
+        "events": [
+          "message"
+        ],
+        "hmac": {
+          "key": "your-secret-key"
+        },
+        "retries": {
+          "policy": "constant",
+          "delaySeconds": 2,
+          "attempts": 15
+        },
+        "customHeaders": [
+          {
+            "name": "X-My-Custom-Header",
+            "value": "Value"
+          }
+        ]
+      }
+    ]
+  }
+}
+Global webhooks
+There’s a way how you can configure 🔄 Webhooks for all sessions at once - by settings these environment variables:
+
+WHATSAPP_HOOK_URL=https://webhook.site/11111111-1111-1111-1111-11111111 - to set up a URL for the webhook
+WHATSAPP_HOOK_EVENTS=message,message.any,state.change - specify events.
+WHATSAPP_HOOK_EVENTS=* - subscribe to all events.
+We don’t suggest using * or all events for production, it can generate a lot of requests.
+WHATSAPP_HOOK_HMAC_KEY=your-secret-key - the same as hmac.key field in the webhook configuration.
+WHATSAPP_HOOK_RETRIES_POLICY=linear - the same as retries.policy field in the webhook configuration.
+WHATSAPP_HOOK_RETRIES_DELAY_SECONDS=2 - the same as retries.delaySeconds field in the webhook configuration.
+WHATSAPP_HOOK_RETRIES_ATTEMPTS=4
+WHATSAPP_HOOK_CUSTOM_HEADERS=X-My-Custom-Header-1:Value;X-My-Custom-Header-2:Value - the same as customHeaders field in the webhook configuration.
+Use Header:Value format and separate them by ;.
+That webhook configuration does not appear in session.config field in GET /api/sessions/ request.
+
+💡 You can open https://webhook.site and paste URL from it to url field, and you’ll see all requests immediately in your browser to intercept the webhook’s payload.
+
+Retries
+You can configure retry policy for webhooks by settings config.retries structure when POST /api/sessions/:
+
+
+{
+  "name": "default",
+  "config": {
+    "webhooks": [
+      {
+        "url": "https://webhook.site/11111111-1111-1111-1111-11111111",
+        "events": [
+          "message"
+        ],
+        "retries": {
+          "policy": "constant",
+          "delaySeconds": 2,
+          "attempts": 15
+        }
+      }
+    ]
+  }
+}
+Possible policy:
+
+constant - retry with the same delay between attempts (2, 2, 2, 2)
+linear - retry with linear backoff (2, 4, 6, 8)
+exponential - retry with exponential backoff with 20% jitter (2, 4.1, 8.4, 16.3).
+Headers
+When you receive a webhook request to your API endpoint, you’ll get those headers:
+
+X-Webhook-Request-Id - unique request id for each webhook request.
+X-Webhook-Timestamp - Unix timestamp in milliseconds when the webhook was sent.
+If you’re using HMAC authentication you’ll get two additional headers:
+
+X-Webhook-Hmac - message authentication code for the raw body in HTTP POST request that send to your endpoint.
+X-Webhook-Hmac-Algorithm - sha512 - algorithm that have been used to create X-Webhook-Hmac value.
+You can send any customer headers by defining config.webhooks.customHeaders fields this way:
+
+
+{
+  "name": "default",
+  "config": {
+    "webhooks": [
+      {
+        "url": "https://webhook.site/11111111-1111-1111-1111-11111111",
+        "events": [
+          "message"
+        ],
+        "customHeaders": [
+          {
+            "name": "X-My-Custom-Header",
+            "value": "Value"
+          }
+        ]
+      }
+    ]
+  }
+}
+HMAC authentication
+You can authenticate webhook sender by using HMAC Authentication.
+
+Define you secret key in config.hmac.key field when you start session with POST /api/sessions/:
+
+{
+  "name": "default",
+  "config": {
+    "webhooks": [
+      {
+        "url": "https://webhook.site/11111111-1111-1111-1111-11111111",
+        "events": [
+          "message"
+        ],
+        "hmac": {
+          "key": "your-secret-key"
+        }
+      }
+    ]
+  }
+}
+After that you’ll receive all webhooks payload with two additional headers:
+X-Webhook-Hmac - message authentication code for the raw body in HTTP POST request that send to your endpoint.
+X-Webhook-Hmac-Algorithm - sha512 - algorithm that have been used to create X-Webhook-Hmac value.
+Implement the authentication algorithm by hashing body and using secret key and then verifying it with X-Webhook-Hmac value. Please check your implementation here ->
+Here’s example for
+
+# Full body
+{"event":"message","session":"default","engine":"WEBJS"}
+# Secret key
+my-secret-key
+# X-Webhook-Hmac-Algorithm
+sha512
+# X-Webhook-Hmac
+208f8a55dde9e05519e898b10b89bf0d0b3b0fdf11fdbf09b6b90476301b98d8097c462b2b17a6ce93b6b47a136cf2e78a33a63f6752c2c1631777076153fa89
+Examples
+Here’s few examples of how to handle webhook in different languages:
+
+Python guide
+Do you use another language?
+
+Please create a short guide how to handle webhook and send message after you finish your setup! You can create a pull request with your favorite language in the GitHub, in examples folder ->.
+
+Websockets
+You can use Websockets to receive messages in real-time!
+
+Install websocat first.
+
+
+# Listen all sessions and events
+# -E to end the connection when the server closes it
+websocat -E ws://localhost:3000/ws
+
+# Use secure (SSL/HTTPS) connection - add wss://
+websocat -E wss://localhost:3000/ws
+
+# Add your API key
+websocat -E ws://localhost:3000/ws?x-api-key=123
+
+# Listen all sessions and events
+websocat -E ws://localhost:3000/ws?session=*&events=*
+
+# Listen certain events
+websocat -E ws://localhost:3000/ws?session=*&events=session.status&events=message
+
+# If you want to see the logs and ping the server every 10 seconds
+websocat -v --ping-interval=10 -E ws://localhost:3000/ws
+
+# Listen certain session
+websocat -E ws://localhost:3000/ws?session=default&events=session.status
+
+# With API Key
+websocat -E ws://localhost:3000/ws?x-api-key=123
+Parameters:
+
+session - session name, * for all sessions
+events - list of events, * for all events
+events=* doesn’t include engine.event. You need to specify events=*&events=engine.event if you want to listen all events
+x-api-key - your API key
+Examples
+JavaScript
+
+// Configuration
+const apiKey = '123'; // Replace with your API key
+const baseUrl = 'ws://localhost:3000/ws';
+const session = '*'; // Use '*' to listen to all sessions
+const events = ['session.status', 'message']; // List of events to listen to
+
+// Construct the WebSocket URL with query parameters
+const queryParams = new URLSearchParams({
+    'x-api-key': apiKey,
+    session,
+    ...events.reduce((acc, event) => ({ ...acc, events: event }), {}) // Add multiple 'events' params
+});
+const wsUrl = `${baseUrl}?${queryParams.toString()}`;
+
+// Initialize WebSocket connection
+const socket = new WebSocket(wsUrl);
+
+// Handle incoming messages
+socket.onmessage = (event) => {
+    console.log('Received:', event.data);
+};
+
+// Handle errors
+socket.onerror = (error) => {
+    console.error('WebSocket Error:', error);
+};
+
+// Handle connection open
+socket.onopen = () => {
+    console.log('WebSocket connection established:', wsUrl);
+};
+
+// Handle connection close
+socket.onclose = () => {
+    console.log('WebSocket connection closed');
+};
+Event Payload
+Structure
+In Webhooks or Websockets you’ll receive the following payload:
+
+
+{
+  // lower case ULID - https://github.com/ulid/spec
+  "id": "evt_1111111111111111111111111111",
+  // timestamp in milliseconds
+  "timestamp": 1741249702485,
+  // event name
+  "event": "message",
+  // session name
+  "session": "default",
+  // 'metadata' provided when you created the session
+  "metadata": {
+    "user.id": "123",
+    "user.email": "email@example.com"
+  },
+  // me - your own contact, if authenticated and WORKING
+  "me": {
+    "id": "71111111111@c.us",
+    "pushName": "~"
+  },
+  "payload": {
+    ... // event specific data
+  },
+  "environment": {
+    "tier": "PLUS",
+    "version": "2023.10.12"
+  },
+  "engine": "WEBJS"
+}
+Metadata
+You can provide additional metadata when you start the session with Start Session request data.
+
+message
+
+{
+  "event": "message",
+  "session": "default",
+  // 'metadata' provided when you created the session
+  "metadata": {
+    "user.id": "123",
+    "user.email": "email@example.com"
+  },
+  ...
+}
+You’ll receive the same metadata in the webhook payload.
+
+Events
+Here’s the list of features that are available by 🏭 Engines:
+
+🖥️ Sessions - Events
+📤 Messages - Events
+💬 Chats - Events
+👥 Groups - Events
+🏷️ Labels - Events
+✅ Presence - Events
+📶 Polls - Events
+📞 Calls - Events
+session.status
+The session.status event is triggered when the session status changes.
+
+STOPPED - session is stopped
+STARTING - session is starting
+SCAN_QR_CODE - session is required to scan QR code or login via phone number
+When you receive the session.status event with SCAN_QR_CODE status, you can fetch updated QR ->
+The SCAN_QR_CODE is issued every time when QR updated (WhatsApp requirements)
+WORKING - session is working and ready to use
+FAILED - session is failed due to some error. It’s likely that authorization is required again or device has been disconnected from that account. Try to restart the session and if it doesn’t help - logout and start the session again.
+session.status
+
+{
+    "event": "session.status",
+    "session": "default",
+    "me": {
+        "id": "7911111@c.us",
+        "pushName": "~"
+    },
+    "payload": {
+        "status": "WORKING"
+    },
+    "engine": "WEBJS",
+    "environment": {
+        "version": "2023.10.12",
+        "engine": "WEBJS",
+        "tier": "PLUS"
+    }
+}
+message
+Incoming message (text/audio/files)
+
+message
+
+{
+  "event": "message",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    "id": "true_11111111111@c.us_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "timestamp": 1667561485,
+    "from": "11111111111@c.us",
+    "fromMe": true,
+    "source": "app",
+    "to": "11111111111@c.us",
+    "body": "Hi there!",
+    "hasMedia": false,
+    "ack": 1,
+    "vCards": [],
+    "_data": {
+        ...
+    }
+  }
+}
+Fields:
+
+hasMedia: true | false - indicates if the message has media attached
+media.url: http://localhost:8000/... - the URL to download the media
+_data - internal engine data, can be different for each engine
+source: app|api - can be api for message.any event if you send a message via WAHA API. Otherwise, it’s app.
+It’s possible to have hasMedia: true, but media: null - it means WAHA didn’t download media due to configuration.
+
+message.any
+Fired on all message creations, including your own. The payload is the same as for message event.
+
+message.any
+
+  "event": "message.any",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    ...
+  }
+}
+Fields:
+
+source: app|api - can be api for message.any event if you send a message via WAHA API. Otherwise, it’s app.
+message.reaction
+Receive events when a message is reacted to by a user (or yourself reacting to a message).
+
+payload.reaction.text - emoji that was used to react to the message. It’ll be an empty string if the reaction was removed.
+payload.reaction.messageId - id of the message that was reacted to.
+message.reaction
+
+{
+    "event": "message.reaction",
+    "session": "default",
+    "me": {
+        "id": "79222222222@c.us",
+        "pushName": "WAHA"
+    },
+    "payload": {
+        "id": "false_79111111@c.us_11111111111111111111111111111111",
+        "from": "79111111@c.us",
+        "fromMe": false,
+        "participant": "79111111@c.us",
+        "to": "79111111@c.us",
+        "timestamp": 1710481111.853,
+        "reaction": {
+            "text": "🙏",
+            "messageId": "true_79111111@c.us_11111111111111111111111111111111"
+        }
+    },
+    "engine": "WEBJS",
+    "environment": {
+        "version": "2024.3.3",
+        "engine": "WEBJS",
+        "tier": "PLUS",
+        "browser": "/usr/bin/google-chrome-stable"
+    }
+}
+NOWEB engine note - reactions were sent in ‘message’ and ‘message.any’ events, not it’s available only in ‘message.reaction’!"
+
+message.ack
+Receive events when server or recipient gets the message, read or played it.
+
+ackName field contains message status (ack has the same meaning, but show the value in int, but we keep it for backward compatability, they much to each other)
+
+Possible message ack statuses:
+
+ackName: ERROR, ack: -1 - error occurred
+ackName: PENDING, ack: 0 - message is pending
+ackName: SERVER, ack: 1 - message was sent to server
+ackName: DEVICE, ack: 2 - message was sent to the device
+ackName: READ, ack: 3 - recipient read message
+ackName: PLAYED, ack: 4 - recipient played the message
+The payload may have more fields, it depends on the engine you use, but here’s a minimum amount that all engines send:
+
+message.ack
+
+{
+  "event": "message.ack",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    "id":"true_11111111111@c.us_4CC5EDD64BC22EBA6D639F2AF571346C",
+    "from":"11111111111@c.us",
+    "participant": null,
+    "fromMe":true,
+    "ack":3,
+    "ackName":"READ"
+  }
+}
+message.waiting
+Happens when you see Waiting for this message. This may take a while. on your phone.
+
+waiting for this message
+
+message.waiting
+
+{
+  "event": "message.waiting",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    "id": "true_11111111111@c.us_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "timestamp": 1667561485,
+    "from": "11111111111@c.us",
+    "fromMe": true,
+    "to": "11111111111@c.us",
+    ...
+    "_data": {
+      ...
+    }
+  }
+}
+message.edited
+The message.edited event is message edited
+
+message.edited
+
+{
+  "event": "message.edited",
+  "session": "default",
+  "payload": {
+    "id": "false_1231243123@c.us_BBBBBBBBBBBBBBBBBBBBB[_participant]",
+    ...,
+    "editedMessageId": "AAAAAAAAAAAAAAAA",
+    "body": "New body",
+    "_data": ...,
+  }
+}
+Fields:
+
+message.id - message if for edit action
+In format false_{chatId}_{revokeActionMessageId}[_{participant}]
+It’s not the revoked message (but it can be the same, for instance, in WEBJS)
+editedMessageId - the edited message id in format {messageId}, without chatId
+body - the new body (text) of the message
+message.revoked
+The message.revoked event is triggered when a user, whether it be you or any other participant, revokes a previously sent message.
+
+message.revoked
+
+{
+  "event": "message.revoked",
+  "session": "default",
+  "payload": {
+    "after": {
+      "id": "false_1231243123@c.us_BBBBBBBBBBBBBBBBBBBBB[_participant]",
+      "_data": ...,
+      ...,
+    },
+    "revokedMessageId": "AAAAAAAAAAAAAAAA",
+    "before": null
+  }
+}
+Fields:
+
+after.id - message if for revoke action
+In format false_{chatId}_{revokeActionMessageId}[_{participant}]
+It’s not the revoked message (but it can be the same, for instance, in WEBJS)
+revokedMessageId - the revoked message id in format {messageId}, without chatId
+before - is null in most cases.
+chat.archive
+The chat.archive event is triggered when a chat is archived or unarchived.
+
+chat.archive
+
+{
+  "event": "chat.archive",
+  "session": "default",
+  "payload": {
+    "id": "123123123@c.us",
+    "timestamp": 1667561485,
+    "archived": true <== or false
+  },
+  ...
+}
+group.v2.join
+group.v2.join happens when you join or are added to a group.
+
+group.v2.join
+
+{
+  "event": "group.v2.join",
+  "session": "default",
+  "payload": {
+    "group": {
+      "id": "1231231232@g.us",
+      "subject": "Work Group",
+      "description": "Group description",
+      "invite": "https://chat.whatsapp.com/invitecode",
+      "membersCanAddNewMember": true,
+      "membersCanSendMessages": true,
+      "newMembersApprovalRequired": true,
+      "participants": [
+        {
+          "id": "99999@c.us",
+          "role": "participant"
+        }
+      ]
+    },
+    "timestamp": 789456123,
+    "_data": {}
+  }
+}
+group - group information
+id - group ID
+subject - group name
+description - group description
+invite - invite link
+membersCanAddNewMember - if members can add new members
+membersCanSendMessages - if members can send messages
+newMembersApprovalRequired - if new members need approval from admins
+participants - list of participants (check group.v2.participants for more details)
+timestamp - event timestamp
+_data - engine specific data
+group.v2.leave
+group.v2.leave happens when you leave or are removed from a group.
+
+group.v2.leave
+
+{
+  "event": "group.v2.leave",
+  "session": "default",
+  "payload": {
+    "group": {
+      "id": "1231231232@g.us"
+    },
+    "timestamp": 789456123,
+    "_data": {}
+  }
+}
+group.id - group ID
+timestamp - event timestamp
+_data - engine specific data
+group.v2.participants
+group.v2.participants happens when someone join or leave a group.
+
+ℹ️ It might duplicate group.v2.join and group.v2.leave events for your ID.
+
+group.v2.participants
+
+{
+  "event": "group.v2.participants",
+  "session": "default",
+  "payload": {
+    "type": "join",
+    "timestamp": 1666943582,
+    "group": {
+      "id": "123456789@g.us"
+    },
+    "participants": [
+      {
+        "id": "123456789@c.us",
+        "role": "participant"
+      }
+    ],
+    "_data": {}
+  }
+}
+type - event type. Possible values:
+join - when someone joins the group
+leave - when someone leaves the group
+promote - when someone is promoted to admin
+demote - when someone is demoted to regular participant
+participants - list of participants (contains only changed participants)
+id - participant ID
+role - participant role. Possible values:
+left - left the group
+participant - regular participant
+admin - group admin
+superadmin - group super admin
+_data - engine specific data
+group.v2.update
+group.v2.update happens when the group information is updated.
+
+group.v2.update
+
+{
+  "event": "group.v2.update",
+  "session": "default",
+  "payload": {
+    "group": {
+      "id": "1231231232@g.us",
+      "subject": "New Work Group Name"
+    },
+    "timestamp": 789456123,
+    "_data": {}
+  }
+}
+group - group information with updates field (may contain all fields in some engines)
+See details in group.v2.join
+timestamp - event timestamp
+_data - engine specific data
+presence.update
+payload.id indicates the chat - either direct chat with a contact or a group chat.
+payload.id.[].participant - certain participant presence status. For a direct chat there’s only one participant.
+presence.update
+
+{
+    "event": "presence.update",
+    "session": "default",
+    "engine": "NOWEB",
+    "payload": {
+        "id": "111111111111111111@g.us",
+        "presences": [
+            {
+                "participant": "11111111111@c.us",
+                "lastKnownPresence": "typing",
+                "lastSeen": null
+            }
+        ]
+    }
+}
+poll.vote
+We have a dedicated page how to send polls and receive votes!
+
+poll.vote
+
+{
+  "event": "poll.vote",
+  "session": "default",
+  "payload": {
+    "vote": {
+      "id": "false_1111111111@c.us_83ACBE602A05C79B234B54415E95EE8A",
+      "to": "me",
+      "from": "1111111@c.us",
+      "fromMe": false,
+      "selectedOptions": ["Awesome!"],
+      "timestamp": 1692861427
+    },
+    "poll": {
+      "id": "true_1111111111@c.us_BAE5F2EF5C69001E",
+      "to": "1111111111@c.us",
+      "from": "me",
+      "fromMe": true
+    }
+  },
+  "engine": "NOWEB"
+}
+poll.vote.failed
+We have a dedicated page how to send polls and receive votes!
+
+poll.vote.failed
+
+{
+  "event": "poll.vote.failed",
+  "session": "default",
+  "payload": {
+    "vote": {
+      "id": "false_11111111111@c.us_2E8C4CDA89EDE3BC0BC7F605364B8451",
+      "to": "me",
+      "from": "111111111@c.us",
+      "fromMe": false,
+      "selectedOptions": [],
+      "timestamp": 1692956972
+    },
+    "poll": {
+      "id": "true_1111111111@c.us_BAE595F4E0A2042C",
+      "to": "111111111@c.us",
+      "from": "me",
+      "fromMe": true
+    }
+  },
+  "engine": "NOWEB"
+}
+label.upsert
+label.upsert
+
+{
+  "event": "label.upsert",
+  "session": "default",
+  "payload": {
+    "id": "10",
+    "name": "Label Name",
+    "color": 14,
+    "colorHex": "#00a0f2"
+  },
+  "engine": "NOWEB",
+  ...
+}
+label.deleted
+label.deleted
+
+{
+  "event": "label.deleted",
+  "session": "default",
+  "payload": {
+    "id": "10",
+    "name": "",
+    "color": 14,
+    "colorHex": "#00a0f2"
+  },
+  "engine": "NOWEB",
+  ...
+}
+label.chat.added
+label.chat.added
+
+{
+  "event": "label.chat.added",
+  "session": "default",
+  "payload": {
+    "labelId": "6",
+    "chatId": "11111111111@c.us",
+    "label": null <=== right after scanning QR it can be null.
+  },
+  "engine": "NOWEB",
+  ...
+}
+label.chat.deleted
+label.chat.deleted
+
+{
+  "event": "label.chat.deleted",
+  "session": "default",
+  "payload": {
+    "labelId": "6",
+    "chatId": "11111111111@c.us",
+    "label": null
+  },
+  "engine": "NOWEB",
+  ...
+}
+call.received
+call.received
+
+{
+  "event": "call.received",
+  "session": "default",
+  "payload": {
+    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "from": "22222222222@c.us",
+    "timestamp": 1721374000,
+    "isVideo": false,
+    "isGroup": false
+  },
+  ...
+}
+call.accepted
+call.accepted
+
+{
+  "event": "call.accepted",
+  "session": "default",
+  "payload": {
+    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "from": "22222222222@c.us",
+    "timestamp": 1721374000,
+    "isVideo": false,
+    "isGroup": false
+  },
+  ...
+}
+call.rejected
+call.rejected
+
+{
+  "event": "call.rejected",
+  "session": "default",
+  "payload": {
+    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "from": "22222222222@c.us",
+    "timestamp": 1721374000,
+    "isVideo": false,
+    "isGroup": false
+  },
+  ...
+}
+engine.event
+Low-level engine event, for debug and troubleshooting purposes.
+
+engine.event
+
+{
+  "event": "engine.event",
+  "session": "default",
+  "engine": "NOWEB",
+  "payload": {
+    "event": "messages.upsert",
+    "data": {"":  ""}
+  }
+}
+Deprecated Events
+group.join
+⚠️ DEPRECATED. payload has engine specific data. Use group.v2.leave instead.
+
+group.join
+
+{
+  "event": "group.join",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    ...
+  }
+}
+group.leave
+⚠️ DEPRECATED. payload has engine specific data. Use group.v2.leave instead.
+
+group.leave
+
+{
+  "event": "group.leave",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    ...
+  }
+}
+state.change
+⚠️ DEPRECATED, use session.status event instead.
+
+It’s an internal engine’s state, not session status.
+
+state.change
+
+{
+  "event": "state.change",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {
+    ...
+  }
+}
