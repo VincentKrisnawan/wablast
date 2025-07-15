@@ -14,7 +14,7 @@ class AuthController extends Controller
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8',
         ]);
 
         $user = User::create([
@@ -25,29 +25,26 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return response()->json([
-            'message' => 'Registrasi berhasil',
-            'user' => $user
-        ]);
+         return redirect('/home')->with('Registrasi berhasil!');
     }
 
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
+            'name' => 'required|string',
+            'password' => 'required|string'
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $user = User::where('name', $credentials['name'])->first();
 
-            return response()->json([
-                'message' => 'Login berhasil',
-                'user' => Auth::user()
-            ]);
+        if ($user && Hash::check($credentials['password'], $user->password)) {
+            Auth::login($user);
+            return redirect('/home');
         }
 
-        return response()->json(['message' => 'Email atau password salah'], 401);
+        return back()->withErrors([
+            'login' => 'Username atau password salah!'
+        ])->withInput();
     }
 
     public function logout(Request $request)
