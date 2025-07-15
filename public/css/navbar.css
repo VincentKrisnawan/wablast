@@ -1,0 +1,135 @@
+html, body {
+    /* height: 100%; */
+    font-family: 'Poppins', sans-serif;
+}
+.navbar {
+    background: #f97316;
+    background-color: #f97316;
+    border-bottom: 1px solid #eee;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* KIRI: PROFIL */
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.profile-name {
+    font-weight: bold;
+    margin: 0;
+}
+
+.profile-email {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+/* KANAN: MENU */
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.navbar-toggle {
+    display: none;
+    font-size: 26px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.navbar-menu {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+}
+
+.navbar-menu li a {
+    text-decoration: none;
+    color: #111;
+    font-weight: 500;
+}
+
+.logout-link {
+    color: #e53935;
+    font-weight: bold;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .navbar-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .navbar-left {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+    }
+
+    .navbar-right {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .navbar-toggle {
+        display: block;
+    }
+
+    .navbar-menu {
+        display: none;
+        flex-direction: column;
+        align-items: flex-end;
+        width: 100%;
+    }
+
+    .navbar-menu.active {
+        display: flex;
+    }
+
+    .navbar-menu li {
+        width: 100%;
+        text-align: right;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .navbar-header {
+        /* width: 100%; */
+        display: flex;
+        /* justify-content: space-between; */
+        /* align-items: center; */
+    }
+
+}

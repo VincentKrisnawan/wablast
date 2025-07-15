@@ -6,6 +6,7 @@ use App\Http\Controllers\UploadContactController;
 use App\Http\Controllers\MessageSessionController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\HomeController;
 
 
 
@@ -14,12 +15,12 @@ Route::get('/', [AuthController::class, 'showLoginForm']);
 Route::get('/register', [AuthController::class, 'showRegisterForm']);
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/logout', [AuthController::class, 'logout']);
 
 
 
 
 Route::middleware(['auth'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     // // Upload kontak
     // Route::post('/upload-contacts', [UploadContactController::class, 'upload']);
     // Route::get('/upload-batches/{id}/contacts', [UploadContactController::class, 'getContacts']);
@@ -39,5 +40,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', function () {
         return view('pages.home');
     });
+    // Route untuk menampilkan halaman utama
+    // Mengarah ke method 'index' di HomeController
+    // Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    // Route untuk menangani proses upload file
+    // Mengarah ke method 'upload' di HomeController
+    Route::post('/upload', [HomeController::class, 'upload'])->name('upload.file');
+
+    // Route untuk menyimpan template pesan
+    // Mengarah ke method 'storeTemplate' di HomeController
+    Route::post('/template/store', [HomeController::class, 'storeTemplate'])->name('template.store');
+
+    Route::post('/cleanup', [HomeController::class, 'cleanup'])->name('data.cleanup');
+
+    // {batch} akan otomatis di-resolve menjadi instance UploadBatch
+    Route::get('/batch/{batch}/contacts', [HomeController::class, 'showContacts'])->name('contacts.show');
+    Route::delete('/session/{session}/delete', [HomeController::class, 'destroySession'])->name('session.destroy');
+
 });
 
