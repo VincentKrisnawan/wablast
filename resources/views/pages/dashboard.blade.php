@@ -1,84 +1,122 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h1>Dashboard Overview</h1>
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
 
+<div class="container py-4">
+    <h5 class="mb-4">Dashboard Overview</h5>
+
+    {{-- Kartu Statistik --}}
     <div class="row">
-        <div class="col-md-3">
-            <div class="card">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Total Messages</h5>
-                    <p class="card-text">{{ $totalMessages }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Sent Messages</h5>
-                    <p class="card-text">{{ $sentMessages }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Read Messages</h5>
-                    <p class="card-text">{{ $readMessages }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Replied Messages</h5>
-                    <p class="card-text">{{ $repliedMessages }}</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="mt-4">
-        <h2>Detail Pesan Terkirim</h2>
-        @foreach ($sessions as $session)
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <a href="{{ route('dashboard', ['session' => $session->id]) }}" class="btn btn-link" data-toggle="collapse" data-target="#session-{{ $session->id }}" aria-expanded="{{ $activeSession == $session->id ? 'true' : 'false' }}">
-                            Sesi #{{ $session->id }} - {{ $session->status }}
-                        </a>
-                    </h5>
-                </div>
-
-                <div id="session-{{ $session->id }}" class="collapse {{ $activeSession == $session->id ? 'show' : '' }}">
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nama</th>
-                                    <th>No. HP</th>
-                                    <th>Tanggal Kirim</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($messages[$session->id] as $message)
-                                    <tr>
-                                        <td>{{ $message->contact->nama }}</td>
-                                        <td>{{ $message->contact->no_hp }}</td>
-                                        <td>{{ $message->sent_at ? \Carbon\Carbon::parse($message->sent_at)->diffForHumans() : 'N/A' }}</td>
-                                        <td>{{ $message->status }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        {{ $messages[$session->id]->links() }}
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Pesan</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalMessages }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        @endforeach
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Terkirim</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $sentMessages }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Dibaca</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $readMessages }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Dibalas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $repliedMessages }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Detail Pesan dengan Accordion --}}
+    <div class="mt-4">
+        <h5>Detail Pesan Terkirim</h5>
+        <div class="accordion" id="sessionsAccordion">
+            @forelse ($sessions as $session)
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ $session->id }}">
+                        <button class="accordion-button {{ $activeSession != $session->id ? 'collapsed' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $session->id }}" aria-expanded="{{ $activeSession == $session->id ? 'true' : 'false' }}" aria-controls="collapse-{{ $session->id }}">
+                            Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }} - Status: <span class="fw-bold ms-1">{{ strtoupper($session->status) }}</span>
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ $session->id }}" class="accordion-collapse collapse {{ $activeSession == $session->id ? 'show' : '' }}" aria-labelledby="heading-{{ $session->id }}" data-bs-parent="#sessionsAccordion">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama</th>
+                                            <th>No. HP</th>
+                                            <th>Tanggal Kirim</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($messages[$session->id] as $message)
+                                            <tr>
+                                                <td>{{ $message->contact->nama ?? 'N/A' }}</td>
+                                                <td>{{ $message->contact->no_hp ?? 'N/A' }}</td>
+                                                <td>{{ $message->sent_at ? \Carbon\Carbon::parse($message->sent_at)->diffForHumans() : 'N/A' }}</td>
+                                                <td><span class="badge bg-light text-dark">{{ $message->status }}</span></td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center">Tidak ada pesan untuk sesi ini.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{-- Paginasi untuk setiap sesi --}}
+                            <div class="d-flex justify-content-center mt-3">
+                                {{ $messages[$session->id]->appends(['session' => $session->id])->links() }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="alert alert-light">Belum ada sesi pengiriman yang tercatat.</div>
+            @endforelse
+        </div>
+
+        {{-- Paginasi untuk sesi --}}
+        @if ($sessions->hasPages())
+            <x-pagination :paginator="$sessions" />
+        @endif
     </div>
 </div>
+
+{{-- PERBAIKAN: Tambahkan Bootstrap JS di sini agar dropdown (accordion) berfungsi --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @endsection

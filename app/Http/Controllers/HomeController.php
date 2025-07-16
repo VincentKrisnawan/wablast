@@ -15,6 +15,9 @@ use App\Models\UploadBatch;
 use App\Models\UploadContact;
 use App\Models\MessageSession;
 use App\Models\MessageTemplate;
+use App\Models\Message;
+
+use App\Jobs\SendSessionMessages;
 
 class HomeController extends Controller
 {
@@ -23,36 +26,30 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
-        
-        $sessions = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1); // Inisialisasi dengan paginator kosong
-        $templateText = '';
-        $totalSessionCount = 0; // Default total sesi
+        // PERBAIKAN: Ambil SEMUA sesi milik user yang login, bukan hanya dari batch terakhir.
+        $sessions = MessageSession::whereHas('batch', function ($query) {
+            $query->where('user_id', Auth::id());
+        })
+        ->with('batch') // Eager load data batch untuk setiap sesi
+        ->withCount(['messages' => function ($query) {
+            $query->where('status', 'sent');
+        }])
+        ->latest('id') // Urutkan sesi dari yang paling baru dibuat
+        ->paginate(10); // Paginasi 10 sesi per halaman
 
-        if ($latestBatch) {
-            $sessions = $latestBatch->sessions()->withCount(['messages' => function ($query) {
-                $query->where('status', 'sent');
-            }])->paginate(10);
-
-            // PERBAIKAN: Hitung jumlah total sesi untuk batch ini
-            $totalSessionCount = ceil($latestBatch->total_contacts / 100);
-
-            $template = MessageTemplate::where('user_id', Auth::id())->first();
-            if ($template) {
-                $templateText = $template->template;
-            }
-        }
+        // Logika untuk template tetap sama, karena terikat pada user
+        $template = MessageTemplate::where('user_id', Auth::id())->first();
+        $templateText = $template ? $template->template : '';
         
         return view('pages.home', [ 
             'sessions' => $sessions,
-            'latest_batch' => $latestBatch,
-            'latest_batch_id' => $latestBatch ? $latestBatch->id : null,
             'template_text' => $templateText,
-            'total_session_count' => $totalSessionCount, // Kirim total sesi ke view
         ]);
     }
 
-    // ... (sisa method lainnya tidak berubah)
+    /**
+     * Menangani proses upload file kontak dengan logika penggabungan sesi yang cerdas.
+     */
     public function upload(Request $request)
     {
         $request->validate([
@@ -64,22 +61,23 @@ class HomeController extends Controller
         try {
             $file = $request->file('file_kontak');
             
-            $batch = UploadBatch::where('user_id', Auth::id())->latest()->first();
+            $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
+            $createNewBatch = false;
 
-            if (!$batch) {
-                $batch = UploadBatch::create([
-                    'user_id'        => Auth::id(),
-                    'filename'       => 'Batch Gabungan',
-                    'total_contacts' => 0,
-                ]);
+            // 1. Periksa batch terakhir, jika ada.
+            if ($latestBatch) {
+                // Cek apakah ada sesi di batch terakhir yang statusnya BUKAN 'pending'.
+                $hasNonPendingSession = $latestBatch->sessions()->where('status', '!=', 'pending')->exists();
+                if ($hasNonPendingSession) {
+                    $createNewBatch = true;
+                }
             }
 
+            // Baca file Excel terlebih dahulu untuk mendapatkan jumlah kontak baru
             $spreadsheet = IOFactory::load($file->getRealPath());
             $sheet = $spreadsheet->getActiveSheet();
-            
             $headerRow = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', null, true, false)[0];
             $headers = array_map(fn($h) => strtolower(str_replace(' ', '_', trim($h))), $headerRow);
-
             $noHpIndex = array_search('no_hp', $headers);
             $namaIndex = array_search('nama', $headers);
 
@@ -88,13 +86,11 @@ class HomeController extends Controller
             }
 
             $highestRow = $sheet->getHighestRow();
-            $newContactsCount = 0;
-
+            $newContacts = [];
             for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
                 $rowData = $sheet->rangeToArray('A' . $rowIndex . ':' . $sheet->getHighestColumn() . $rowIndex, null, true, false)[0];
                 $no_hp = $rowData[$noHpIndex] ?? null;
                 $nama = $rowData[$namaIndex] ?? null;
-
                 if (empty($no_hp) || empty($nama)) continue;
 
                 $data_json = [];
@@ -103,27 +99,36 @@ class HomeController extends Controller
                         $data_json[$headerName] = $rowData[$index] ?? null;
                     }
                 }
-
-                UploadContact::create([
-                    'batch_id'  => $batch->id,
-                    'no_hp'     => $no_hp,
-                    'nama'      => $nama,
-                    'data_json' => json_encode($data_json),
-                ]);
-                $newContactsCount++;
+                $newContacts[] = ['no_hp' => $no_hp, 'nama' => $nama, 'data_json' => json_encode($data_json)];
             }
 
-            if ($newContactsCount === 0) {
+            if (empty($newContacts)) {
                 throw new \Exception("File yang diupload tidak berisi data kontak yang valid.");
             }
 
-            $batch->total_contacts += $newContactsCount;
+            // 2. Tentukan apakah kita akan membuat batch baru atau menggunakan yang lama.
+            if ($createNewBatch || !$latestBatch) {
+                $batch = UploadBatch::create(['user_id' => Auth::id(), 'filename' => 'Batch - ' . now()->format('d M Y, H:i'), 'total_contacts' => 0]);
+                $successMessage = 'Batch baru berhasil dibuat dan sesi telah dibuat!';
+                $oldSessionCount = 0;
+            } else {
+                $batch = $latestBatch;
+                $successMessage = 'Kontak baru berhasil ditambahkan ke batch terakhir!';
+                $oldSessionCount = $batch->sessions()->count();
+            }
+
+            // 3. Tambahkan kontak baru ke database
+            foreach ($newContacts as $contact) {
+                UploadContact::create(array_merge($contact, ['batch_id' => $batch->id]));
+            }
+
+            // 4. Perbarui total kontak di batch
+            $batch->total_contacts += count($newContacts);
             $batch->save();
-
-            MessageSession::where('batch_id', $batch->id)->delete();
-
-            $sessionCount = ceil($batch->total_contacts / 100);
-            for ($i = 1; $i <= $sessionCount; $i++) {
+            
+            // 5. Buat HANYA sesi tambahan yang diperlukan
+            $newSessionCount = ceil($batch->total_contacts / 100);
+            for ($i = $oldSessionCount + 1; $i <= $newSessionCount; $i++) {
                 MessageSession::create([
                     'batch_id'       => $batch->id,
                     'session_number' => $i,
@@ -132,7 +137,7 @@ class HomeController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('home')->with('success', 'Kontak baru berhasil ditambahkan dan sesi telah diperbarui!');
+            return redirect()->route('home')->with('success', $successMessage);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -140,6 +145,7 @@ class HomeController extends Controller
         }
     }
 
+    // ... (sisa method lainnya tidak berubah)
     public function showAllContacts()
     {
         $contacts = UploadContact::whereHas('batch', function ($query) {
@@ -163,8 +169,25 @@ class HomeController extends Controller
 
         try {
             $contactsPerSession = 100;
-            $offset = ($session->session_number - 1) * $contactsPerSession;
+            
+            // PERBAIKAN: Hitung posisi lokal sesi di dalam batch-nya.
+            // 1. Ambil semua nomor sesi untuk batch ini, diurutkan.
+            $sessionNumbersInBatch = MessageSession::where('batch_id', $session->batch_id)
+                                                    ->orderBy('session_number', 'asc')
+                                                    ->pluck('session_number')
+                                                    ->toArray();
 
+            // 2. Cari indeks (posisi) dari sesi yang akan kita hapus.
+            $localIndex = array_search($session->session_number, $sessionNumbersInBatch);
+
+            if ($localIndex === false) {
+                throw new \Exception("Sesi tidak ditemukan di dalam batch-nya.");
+            }
+
+            // 3. Hitung offset berdasarkan posisi lokal, bukan nomor sesi global.
+            $offset = $localIndex * $contactsPerSession;
+
+            // 4. Ambil ID kontak yang akan dihapus berdasarkan batch dan offset yang benar.
             $contactIdsToDelete = UploadContact::where('batch_id', $session->batch_id)
                                               ->orderBy('id', 'asc')
                                               ->skip($offset)
@@ -214,6 +237,7 @@ class HomeController extends Controller
             DB::table('message_sessions')->truncate();
             DB::table('message_templates')->truncate();
             DB::table('upload_batches')->truncate();
+            DB::table('messages')->truncate();
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
             Storage::disk('public')->deleteDirectory('uploads');
@@ -225,4 +249,45 @@ class HomeController extends Controller
             return back()->with('error', 'Gagal membersihkan data: ' . $e->getMessage());
         }
     }
+
+    public function sendSession(MessageSession $session)
+    {
+        // Otorisasi: Pastikan user hanya bisa mengirim sesi miliknya
+        if ($session->batch->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Aksi tidak diizinkan.'], 403);
+        }
+
+        // Pastikan template pesan ada sebelum memulai
+        $templateExists = MessageTemplate::where('user_id', Auth::id())->exists();
+        if (!$templateExists) {
+            return response()->json(['message' => 'Template pesan belum diatur. Silakan simpan template terlebih dahulu.'], 422);
+        }
+
+        // Kirim tugas ke antrian
+        SendSessionMessages::dispatch($session);
+
+        // Beri respons langsung ke browser
+        return response()->json(['message' => 'Proses pengiriman untuk Sesi #' . $session->session_number . ' telah dimulai.']);
+    }
+
+    public function getSessionStatus(MessageSession $session)
+    {
+        // Otorisasi: Pastikan user hanya bisa memeriksa sesi miliknya.
+        if ($session->batch->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Hitung jumlah pesan yang sudah terkirim untuk sesi ini.
+        $sentCount = Message::where('session_id', $session->id)
+                            ->where('status', 'sent')
+                            ->count();
+
+        // Kembalikan status dan jumlah terkirim sebagai JSON.
+        return response()->json([
+            'status' => $session->status,
+            'sent_count' => $sentCount,
+        ]);
+    }
+
+    
 }

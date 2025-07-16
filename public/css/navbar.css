@@ -10,6 +10,42 @@ html, body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+.nav-logo {
+    width: 40px;
+    height: auto;
+    object-fit: cover;
+    margin-right: 20px;
+}
+
+.nav-nama {
+    color: #fff;
+}
+
+.nav-email{
+    color: #fff;
+}
+
+.nav-link{
+    color: #fff;
+}
+
+.nav-item text{
+    color: #fff;
+}
+
+.btn-logout {
+    color: #ffffff; /* Warna biru primer Bootstrap */
+    font-weight: 500;
+    text-decoration: none;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* Efek saat kursor diarahkan ke tombol logout */
+.btn-logout:hover {
+    color: #000000; /* Warna biru yang lebih gelap saat hover */
+}
+
 .navbar-container {
     display: flex;
     justify-content: space-between;
@@ -39,6 +75,7 @@ html, body {
 
 .profile-name {
     font-weight: bold;
+    color: #fff;
     margin: 0;
 }
 
@@ -73,12 +110,12 @@ html, body {
 
 .navbar-menu li a {
     text-decoration: none;
-    color: #111;
+    color: #fff;
     font-weight: 500;
 }
 
 .logout-link {
-    color: #e53935;
+    color: #fff;
     font-weight: bold;
 }
 

@@ -1,48 +1,45 @@
-/* Styling untuk container pagination */
-.pagination {
-    margin: 0;
+.custom-pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-top: 1rem;
 }
 
-/* Styling untuk setiap item (angka atau panah) */
-.page-item .page-link {
-    color: #4a5568; /* Warna teks abu-abu */
-    background-color: #fff;
+.pagination-info {
+    font-size: 0.875rem; /* 14px */
+    color: #6b7280; /* gray-500 */
+}
+
+.pagination-links {
+    display: flex;
+    gap: 5px;
+}
+
+.pagination-link {
+    display: inline-block;
+    padding: 6px 12px;
     border: 1px solid #e2e8f0;
-    margin: 0 4px;
-    border-radius: 8px; /* Sudut yang lebih bulat */
+    border-radius: 8px;
+    text-decoration: none;
+    color: #4a5568;
+    background-color: #fff;
     transition: all 0.2s ease-in-out;
 }
 
-/* Menghapus border aneh pada item pertama dan terakhir */
-.page-item:first-child .page-link,
-.page-item:last-child .page-link {
-    border-radius: 8px;
-}
-
-/* Efek saat kursor diarahkan ke item */
-.page-item .page-link:hover {
+.pagination-link:hover {
     background-color: #f7fafc;
-    color: #2d3748;
     border-color: #cbd5e0;
 }
 
-/* Styling untuk item yang sedang aktif */
-.page-item.active .page-link {
-    z-index: 3;
-    color: #fff;
-    background-color: #6366f1; /* Warna utama (indigo) */
-    border-color: #6366f1;
+.pagination-link.active {
+    background-color: #f97316; /* Warna Oranye */
+    color: white;
+    border-color: #f97316;
+    font-weight: 600;
 }
 
-.page-item.active .page-link:hover {
-    background-color: #4f46e5;
-    border-color: #4f46e5;
-}
-
-/* Styling untuk item yang non-aktif (misal: panah 'sebelumnya' di halaman pertama) */
-.page-item.disabled .page-link {
-    color: #a0aec0;
-    pointer-events: none;
-    background-color: #fff;
-    border-color: #e2e8f0;
+.pagination-link.disabled {
+    color: #cbd5e0;
+    cursor: not-allowed;
 }

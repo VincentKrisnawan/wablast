@@ -14,10 +14,13 @@ use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
-    public function send($session_id)
+    public function send(MessageSession $session)
     {
         try {
-            $session = MessageSession::findOrFail($session_id);
+            if ($session->batch->user_id !== Auth::id()) {
+                return response()->json(['message' => 'Aksi tidak diizinkan.'], 403);
+            }
+
             $template = MessageTemplate::where('user_id', Auth::id())->first();
 
             if (!$template) {
@@ -31,45 +34,38 @@ class MessageController extends Controller
 
             $session->update(['status' => 'in_progress', 'started_at' => now()]);
 
-            $messageCount = 0;
             foreach ($contacts as $contact) {
                 $text = $template->template;
 
-                foreach ($contact->toArray() as $key => $value) {
-                    if (in_array($key, ['no_hp', 'nama'])) {
-                        $text = str_replace('{{' . $key . '}}', $value, $text);
-                    }
+                $allData = array_merge($contact->toArray(), json_decode($contact->data_json, true) ?? []);
+                foreach ($allData as $key => $value) {
+                    $text = str_replace('{{' . $key . '}}', $value, $text);
                 }
 
                 $chatId = $contact->no_hp . '@c.us';
                 $status = 'failed';
+                $wahaMessageId = null;
+                $fromNumber = null;
 
                 try {
                     $response = Http::withHeaders([
-                        'X-Api-Key' => 'admin', // Replace with your actual WAHA API Key if required
+                        'X-Api-Key' => 'admin',
                     ])->post('http://localhost:3000/api/sendText', [
                         'session' => 'default',
                         'chatId' => $chatId,
                         'text' => $text,
                     ]);
 
-                    $wahaMessageId = null;
-                    $fromNumber = null;
                     if ($response->successful()) {
                         $status = 'sent';
                         $responseData = $response->json();
-
-                        // Correctly extract ID and from_number based on the provided log
                         $wahaMessageId = $responseData['id']['_serialized'] ?? null;
                         $fromNumber = $responseData['_data']['from']['_serialized'] ?? null;
-
-                        Log::info("Message sent to {$chatId}. Extracted WAHA ID: {$wahaMessageId}, From: {$fromNumber}");
-
                     } else {
-                        Log::error("Failed to send message to {$chatId}: " . $response->status() . " - " . $response->body());
+                        Log::error("Gagal mengirim ke {$chatId}: " . $response->body());
                     }
                 } catch (\Exception $e) {
-                    Log::error("Exception while sending message to {$chatId}: " . $e->getMessage());
+                    Log::error("Exception saat mengirim ke {$chatId}: " . $e->getMessage());
                 }
 
                 Message::create([
@@ -83,20 +79,15 @@ class MessageController extends Controller
                     'to_number' => $contact->no_hp,
                 ]);
 
-                $messageCount++;
-
                 sleep(rand(6, 10));
             }
 
-            $session->update([
-                'status' => 'done',
-                'ended_at' => now(),
-            ]);
+            $session->update(['status' => 'done', 'ended_at' => now()]);
 
             return response()->json(['message' => 'Pesan sesi ini telah selesai dikirim.']);
         } catch (\Exception $e) {
             Log::error("Error in MessageController@send: " . $e->getMessage());
-            return response()->json(['message' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'Terjadi kesalahan pada server.', 'error' => $e->getMessage()], 500);
         }
     }
 

@@ -34,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sessions/{id}/template', [MessageTemplateController::class, 'show']);
 
     // Kirim pesan dan laporan
-    Route::post('/sessions/{id}/send', [MessageController::class, 'send']);
+    Route::post('/session/{session}/send', [MessageController::class, 'send'])->name('session.send');
     Route::get('/sessions/{id}/report', [MessageController::class, 'report']);
 
     Route::get('/home', function () {
@@ -63,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\MessagesInsightController::class, 'dashboard'])->name('dashboard');
     Route::get('/sessions/{sessionId}/details', [App\Http\Controllers\MessagesInsightController::class, 'sessionDetails'])->name('session.details');
 
+    Route::post('/session/{session}/send', [HomeController::class, 'sendSession'])->name('session.send');
+    Route::get('/session/{session}/status', [HomeController::class, 'getSessionStatus'])->name('session.status');
 });
 
 

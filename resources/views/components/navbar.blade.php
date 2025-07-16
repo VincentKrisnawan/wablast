@@ -1,13 +1,13 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-3">
+<nav class="navbar navbar-expand-lg navbar-light shadow-sm px-3">
     <div class="container-fluid">
         <div class="d-flex align-items-center">
             {{-- Pastikan Anda memiliki gambar profile.png di public/images --}}
-            <img src="{{ asset('images/profile.png') }}" alt="Profile" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+            <img src="{{ asset('images/small_logo.png') }}" alt="" class="nav-logo">
             <div class="d-flex flex-column">
                 {{-- Tampilkan nama dan email user yang sedang login --}}
                 @auth
-                    <strong class="text-dark">{{ Auth::user()->name }}</strong>
-                    <small class="text-muted">{{ Auth::user()->email }}</small>
+                    <strong class="nav-nama">{{ Auth::user()->name }}</strong>
+                    <small class="nav-email">{{ Auth::user()->email }}</small>
                 @endauth
             </div>
         </div>
@@ -23,7 +23,7 @@
                     <a class="nav-link" href="{{ route('home') }}">Beranda</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a> {{-- Arahkan ke rute dashboard Anda --}}
+                    <a class="nav-link" href="{{ route('dashboard') }}">Report</a> {{-- Arahkan ke rute dashboard Anda --}}
                 </li>
 
                 {{--
@@ -38,7 +38,7 @@
                     {{-- Form untuk logout yang aman menggunakan metode POST --}}
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="btn btn-link nav-link text-danger">Logout</button>
+                        <button type="submit" class="btn btn-link nav-link btn-logout">Logout</button>
                     </form>
                 </li>
             </ul>

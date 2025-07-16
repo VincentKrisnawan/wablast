@@ -6,7 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Message;
 use App\Models\MessageSession;
 use App\Models\UploadContact;
+use App\Models\MessageTemplate; // Pastikan ini di-import
+use Illuminate\Support\Facades\Auth; // Pastikan ini di-import
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http; // Pastikan ini di-import
 use Illuminate\Support\Str;
 
 class MessagesInsightController extends Controller
@@ -28,7 +31,7 @@ class MessagesInsightController extends Controller
     protected function handleMessageAck($payload)
     {
         Log::info('Handling message.ack event.', $payload);
-        $wahaMessageId = $payload['payload']['id'] ?? null;
+        $wahaMessageId = $payload['payload']['id']['_serialized'] ?? null; // Perbaikan path ID
         $ackName = $payload['payload']['ackName'] ?? null;
 
         Log::info("WAHA Message ID: {$wahaMessageId}, ACK Name: {$ackName}");
@@ -42,19 +45,11 @@ class MessagesInsightController extends Controller
                     case 'SERVER':
                     case 'DEVICE':
                         $message->status = 'sent';
-                        // No need to update sent_at again if it's already set
                         break;
                     case 'READ':
+                    case 'PLAYED': // WAHA considers played as read
                         $message->status = 'read';
                         $message->read_at = now();
-                        break;
-                    case 'PLAYED':
-                        $message->status = 'read'; // WAHA considers played as read
-                        $message->read_at = now();
-                        break;
-                    case 'REPLIED': // Assuming 'REPLIED' is a possible ackName or custom event
-                        $message->status = 'replied';
-                        $message->replied_at = now();
                         break;
                     default:
                         Log::warning('Unknown ACK Name received.', ['ackName' => $ackName, 'wahaMessageId' => $wahaMessageId]);
@@ -73,62 +68,82 @@ class MessagesInsightController extends Controller
     protected function handleIncomingMessage($payload)
     {
         Log::info('Handling incoming message event.', $payload);
-        $wahaMessageId = $payload['payload']['id'] ?? null;
         $from = $payload['payload']['from'] ?? null;
         $to = $payload['payload']['to'] ?? null;
-        $body = $payload['payload']['body'] ?? null;
 
-        Log::info("Incoming Message: WAHA ID: {$wahaMessageId}, From: {$from}, To: {$to}");
+        if (!$from || !$to) {
+            Log::warning('Incoming message without "from" or "to" field.', $payload);
+            return;
+        }
 
-        // Ensure numbers are in a consistent format (e.g., remove @c.us for comparison if needed)
         $cleanFrom = Str::before($from, '@');
         $cleanTo = Str::before($to, '@');
 
         $outgoingMessage = Message::where('to_number', $cleanFrom)
-                                  ->where('from_number', $cleanTo)
-                                  ->whereIn('status', ['sent', 'read']) // Allow replies to messages that are sent or read
-                                  ->orderBy('sent_at', 'desc')
-                                  ->first();
+                                   ->where('from_number', $cleanTo)
+                                   ->whereIn('status', ['sent', 'read'])
+                                   ->latest('sent_at')
+                                   ->first();
 
         if ($outgoingMessage) {
-            Log::info('Matching outgoing message found for reply.', ['message_id' => $outgoingMessage->id, 'db_from' => $outgoingMessage->from_number, 'db_to' => $outgoingMessage->to_number, 'webhook_from' => $from, 'webhook_to' => $to]);
             $outgoingMessage->status = 'replied';
             $outgoingMessage->replied_at = now();
             $outgoingMessage->save();
             Log::info('Outgoing message status updated to replied.', ['message_id' => $outgoingMessage->id]);
         } else {
-            Log::info('No matching outgoing message found for incoming message.', ['webhook_from' => $from, 'webhook_to' => $to, 'body' => $body]);
+            Log::info('No matching outgoing message found for incoming message.', ['webhook_from' => $from, 'webhook_to' => $to]);
         }
     }
 
+    /**
+     * PERBAIKAN: Method ini sekarang berisi logika yang benar untuk menampilkan dashboard.
+     */
     public function dashboard(Request $request)
     {
-        $totalMessages = Message::count();
-        $sentMessages = Message::where('status', 'sent')->count();
-        $readMessages = Message::where('status', 'read')->count();
-        $repliedMessages = Message::where('status', 'replied')->count();
+        $userId = Auth::id();
 
-        $sessions = MessageSession::all();
-        $messages = [];
+        // Ambil semua ID sesi milik user
+        $sessionIds = MessageSession::whereHas('batch', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })->pluck('id');
 
-        $activeSession = $request->query('session');
+        // Hitung statistik pesan secara keseluruhan
+        $totalMessages = Message::whereIn('session_id', $sessionIds)->count();
+        $sentMessages = Message::whereIn('session_id', $sessionIds)->where('status', 'sent')->count();
+        $readMessages = Message::whereIn('session_id', $sessionIds)->where('status', 'read')->count();
+        $repliedMessages = Message::whereIn('session_id', $sessionIds)->where('status', 'replied')->count();
 
+        // Ambil sesi dengan paginasi 5 item per halaman
+        $sessions = MessageSession::whereIn('id', $sessionIds)
+                                  ->orderBy('session_number', 'asc')
+                                  ->paginate(5);
+
+        // Tentukan sesi mana yang harus terbuka (berdasarkan parameter URL)
+        $activeSessionId = $request->query('session', $sessions->first()->id ?? null);
+
+        // Ambil pesan untuk setiap sesi (hanya untuk sesi di halaman saat ini) dengan paginasi
+        $messagesBySession = [];
         foreach ($sessions as $session) {
-            $messages[$session->id] = Message::where('session_id', $session->id)
-                ->with('contact')
-                ->paginate(10, ['*'], 'page_' . $session->id)
-                ->withQueryString();
+            $messagesBySession[$session->id] = Message::where('session_id', $session->id)
+                                                      ->with('contact') // Eager load data kontak
+                                                      ->latest('sent_at')
+                                                      ->paginate(10, ['*'], 'page_session_'.$session->id);
         }
 
-        return view('pages.dashboard', compact(
-            'totalMessages', 'sentMessages', 'readMessages', 'repliedMessages', 'sessions', 'messages', 'activeSession'
-        ));
+        return view('pages.dashboard', [
+            'totalMessages' => $totalMessages,
+            'sentMessages' => $sentMessages,
+            'readMessages' => $readMessages,
+            'repliedMessages' => $repliedMessages,
+            'sessions' => $sessions,
+            'messages' => $messagesBySession,
+            'activeSession' => $activeSessionId,
+        ]);
     }
 
     public function sessionDetails($sessionId)
     {
         $session = MessageSession::with(['messages.contact'])->findOrFail($sessionId);
-
         return view('pages.session_details', compact('session'));
     }
 }
