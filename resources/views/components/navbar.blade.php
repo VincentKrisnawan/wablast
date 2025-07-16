@@ -23,17 +23,17 @@
                     <a class="nav-link" href="{{ route('home') }}">Beranda</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Dashboard</a> {{-- Arahkan ke rute dashboard Anda --}}
+                    <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a> {{-- Arahkan ke rute dashboard Anda --}}
                 </li>
 
-                {{-- 
+                {{--
                     Tombol "Lihat Data Terakhir" ini akan muncul secara dinamis.
                     Variabel $latest_batch_id disediakan secara global oleh AppServiceProvider.
                 --}}
                 <li class="nav-item">
                     <a href="{{ route('contacts.all') }}" class="nav-link">Lihat Semua Data</a>
                 </li>
-                
+
                 <li class="nav-item ms-2">
                     {{-- Form untuk logout yang aman menggunakan metode POST --}}
                     <form action="{{ route('logout') }}" method="POST">

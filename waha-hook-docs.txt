@@ -1,3 +1,14 @@
+Events
+In order to notify your application about events in the WhatsApp API, you can use Webhooks and Websockets.
+
+👉 See the list of all available events in the Events section.
+
+🌟 You can observe Events in real-time using 📊 Dashboard - Event Monitor!
+
+Webhooks
+Webhooks
+Webhooks are a way for two different applications to communicate with each other in real-time. When a certain event happens in one application, it sends a message to another application through a webhook URL. The receiving application can then take action based on the information received.
+
 Session webhooks
 You can define webhooks configuration per session when you start it with POST /api/sessions/ request data.
 
@@ -294,42 +305,49 @@ Events
 Here’s the list of features that are available by 🏭 Engines:
 
 🖥️ Sessions - Events
+Events	WEBJS	NOWEB	GOWS
+session.status	✔️	✔️	✔️
+engine.event	✔️	✔️	✔️
+state.change	✔️	✔️	✔️
 📤 Messages - Events
+Events	WEBJS	NOWEB	GOWS
+message	✔️	✔️	✔️
+message.reaction	✔️	✔️	✔️
+message.any	✔️	✔️	✔️
+message.ack	✔️	✔️	✔️
+message.waiting	✔️
+message.edited	✔️	✔️	✔️
+message.revoked	✔️	✔️	✔️
 💬 Chats - Events
+Events	WEBJS	NOWEB	GOWS
+chat.archive	✔️
 👥 Groups - Events
+Events	WEBJS	NOWEB	GOWS
+group.v2.join	✔️	✔️	✔️
+group.v2.leave	✔️	✔️	✔️
+group.v2.participants	✔️	✔️	✔️
+group.v2.update	✔️	✔️	✔️
+group.join	✔️	✔️
+group.leave	✔️
 🏷️ Labels - Events
+Events	WEBJS	NOWEB	GOWS
+label.upsert		✔️	✔️
+label.deleted		✔️	✔️
+label.chat.added		✔️	✔️
+label.chat.deleted		✔️	✔️
 ✅ Presence - Events
+Events	WEBJS	NOWEB	GOWS
+presence.update	✔️	✔️	✔️
 📶 Polls - Events
+Events	WEBJS	NOWEB	GOWS
+poll.vote		✔️	✔️
+poll.vote.failed		✔️	✔️
 📞 Calls - Events
-session.status
-The session.status event is triggered when the session status changes.
+Events	WEBJS	NOWEB	GOWS
+call.received	✔️	✔️
+call.accepted		✔️
+call.rejected		✔️
 
-STOPPED - session is stopped
-STARTING - session is starting
-SCAN_QR_CODE - session is required to scan QR code or login via phone number
-When you receive the session.status event with SCAN_QR_CODE status, you can fetch updated QR ->
-The SCAN_QR_CODE is issued every time when QR updated (WhatsApp requirements)
-WORKING - session is working and ready to use
-FAILED - session is failed due to some error. It’s likely that authorization is required again or device has been disconnected from that account. Try to restart the session and if it doesn’t help - logout and start the session again.
-session.status
-
-{
-    "event": "session.status",
-    "session": "default",
-    "me": {
-        "id": "7911111@c.us",
-        "pushName": "~"
-    },
-    "payload": {
-        "status": "WORKING"
-    },
-    "engine": "WEBJS",
-    "environment": {
-        "version": "2023.10.12",
-        "engine": "WEBJS",
-        "tier": "PLUS"
-    }
-}
 message
 Incoming message (text/audio/files)
 
@@ -442,439 +460,5 @@ message.ack
     "fromMe":true,
     "ack":3,
     "ackName":"READ"
-  }
-}
-message.waiting
-Happens when you see Waiting for this message. This may take a while. on your phone.
-
-waiting for this message
-
-message.waiting
-
-{
-  "event": "message.waiting",
-  "session": "default",
-  "engine": "WEBJS",
-  "payload": {
-    "id": "true_11111111111@c.us_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "timestamp": 1667561485,
-    "from": "11111111111@c.us",
-    "fromMe": true,
-    "to": "11111111111@c.us",
-    ...
-    "_data": {
-      ...
-    }
-  }
-}
-message.edited
-The message.edited event is message edited
-
-message.edited
-
-{
-  "event": "message.edited",
-  "session": "default",
-  "payload": {
-    "id": "false_1231243123@c.us_BBBBBBBBBBBBBBBBBBBBB[_participant]",
-    ...,
-    "editedMessageId": "AAAAAAAAAAAAAAAA",
-    "body": "New body",
-    "_data": ...,
-  }
-}
-Fields:
-
-message.id - message if for edit action
-In format false_{chatId}_{revokeActionMessageId}[_{participant}]
-It’s not the revoked message (but it can be the same, for instance, in WEBJS)
-editedMessageId - the edited message id in format {messageId}, without chatId
-body - the new body (text) of the message
-message.revoked
-The message.revoked event is triggered when a user, whether it be you or any other participant, revokes a previously sent message.
-
-message.revoked
-
-{
-  "event": "message.revoked",
-  "session": "default",
-  "payload": {
-    "after": {
-      "id": "false_1231243123@c.us_BBBBBBBBBBBBBBBBBBBBB[_participant]",
-      "_data": ...,
-      ...,
-    },
-    "revokedMessageId": "AAAAAAAAAAAAAAAA",
-    "before": null
-  }
-}
-Fields:
-
-after.id - message if for revoke action
-In format false_{chatId}_{revokeActionMessageId}[_{participant}]
-It’s not the revoked message (but it can be the same, for instance, in WEBJS)
-revokedMessageId - the revoked message id in format {messageId}, without chatId
-before - is null in most cases.
-chat.archive
-The chat.archive event is triggered when a chat is archived or unarchived.
-
-chat.archive
-
-{
-  "event": "chat.archive",
-  "session": "default",
-  "payload": {
-    "id": "123123123@c.us",
-    "timestamp": 1667561485,
-    "archived": true <== or false
-  },
-  ...
-}
-group.v2.join
-group.v2.join happens when you join or are added to a group.
-
-group.v2.join
-
-{
-  "event": "group.v2.join",
-  "session": "default",
-  "payload": {
-    "group": {
-      "id": "1231231232@g.us",
-      "subject": "Work Group",
-      "description": "Group description",
-      "invite": "https://chat.whatsapp.com/invitecode",
-      "membersCanAddNewMember": true,
-      "membersCanSendMessages": true,
-      "newMembersApprovalRequired": true,
-      "participants": [
-        {
-          "id": "99999@c.us",
-          "role": "participant"
-        }
-      ]
-    },
-    "timestamp": 789456123,
-    "_data": {}
-  }
-}
-group - group information
-id - group ID
-subject - group name
-description - group description
-invite - invite link
-membersCanAddNewMember - if members can add new members
-membersCanSendMessages - if members can send messages
-newMembersApprovalRequired - if new members need approval from admins
-participants - list of participants (check group.v2.participants for more details)
-timestamp - event timestamp
-_data - engine specific data
-group.v2.leave
-group.v2.leave happens when you leave or are removed from a group.
-
-group.v2.leave
-
-{
-  "event": "group.v2.leave",
-  "session": "default",
-  "payload": {
-    "group": {
-      "id": "1231231232@g.us"
-    },
-    "timestamp": 789456123,
-    "_data": {}
-  }
-}
-group.id - group ID
-timestamp - event timestamp
-_data - engine specific data
-group.v2.participants
-group.v2.participants happens when someone join or leave a group.
-
-ℹ️ It might duplicate group.v2.join and group.v2.leave events for your ID.
-
-group.v2.participants
-
-{
-  "event": "group.v2.participants",
-  "session": "default",
-  "payload": {
-    "type": "join",
-    "timestamp": 1666943582,
-    "group": {
-      "id": "123456789@g.us"
-    },
-    "participants": [
-      {
-        "id": "123456789@c.us",
-        "role": "participant"
-      }
-    ],
-    "_data": {}
-  }
-}
-type - event type. Possible values:
-join - when someone joins the group
-leave - when someone leaves the group
-promote - when someone is promoted to admin
-demote - when someone is demoted to regular participant
-participants - list of participants (contains only changed participants)
-id - participant ID
-role - participant role. Possible values:
-left - left the group
-participant - regular participant
-admin - group admin
-superadmin - group super admin
-_data - engine specific data
-group.v2.update
-group.v2.update happens when the group information is updated.
-
-group.v2.update
-
-{
-  "event": "group.v2.update",
-  "session": "default",
-  "payload": {
-    "group": {
-      "id": "1231231232@g.us",
-      "subject": "New Work Group Name"
-    },
-    "timestamp": 789456123,
-    "_data": {}
-  }
-}
-group - group information with updates field (may contain all fields in some engines)
-See details in group.v2.join
-timestamp - event timestamp
-_data - engine specific data
-presence.update
-payload.id indicates the chat - either direct chat with a contact or a group chat.
-payload.id.[].participant - certain participant presence status. For a direct chat there’s only one participant.
-presence.update
-
-{
-    "event": "presence.update",
-    "session": "default",
-    "engine": "NOWEB",
-    "payload": {
-        "id": "111111111111111111@g.us",
-        "presences": [
-            {
-                "participant": "11111111111@c.us",
-                "lastKnownPresence": "typing",
-                "lastSeen": null
-            }
-        ]
-    }
-}
-poll.vote
-We have a dedicated page how to send polls and receive votes!
-
-poll.vote
-
-{
-  "event": "poll.vote",
-  "session": "default",
-  "payload": {
-    "vote": {
-      "id": "false_1111111111@c.us_83ACBE602A05C79B234B54415E95EE8A",
-      "to": "me",
-      "from": "1111111@c.us",
-      "fromMe": false,
-      "selectedOptions": ["Awesome!"],
-      "timestamp": 1692861427
-    },
-    "poll": {
-      "id": "true_1111111111@c.us_BAE5F2EF5C69001E",
-      "to": "1111111111@c.us",
-      "from": "me",
-      "fromMe": true
-    }
-  },
-  "engine": "NOWEB"
-}
-poll.vote.failed
-We have a dedicated page how to send polls and receive votes!
-
-poll.vote.failed
-
-{
-  "event": "poll.vote.failed",
-  "session": "default",
-  "payload": {
-    "vote": {
-      "id": "false_11111111111@c.us_2E8C4CDA89EDE3BC0BC7F605364B8451",
-      "to": "me",
-      "from": "111111111@c.us",
-      "fromMe": false,
-      "selectedOptions": [],
-      "timestamp": 1692956972
-    },
-    "poll": {
-      "id": "true_1111111111@c.us_BAE595F4E0A2042C",
-      "to": "111111111@c.us",
-      "from": "me",
-      "fromMe": true
-    }
-  },
-  "engine": "NOWEB"
-}
-label.upsert
-label.upsert
-
-{
-  "event": "label.upsert",
-  "session": "default",
-  "payload": {
-    "id": "10",
-    "name": "Label Name",
-    "color": 14,
-    "colorHex": "#00a0f2"
-  },
-  "engine": "NOWEB",
-  ...
-}
-label.deleted
-label.deleted
-
-{
-  "event": "label.deleted",
-  "session": "default",
-  "payload": {
-    "id": "10",
-    "name": "",
-    "color": 14,
-    "colorHex": "#00a0f2"
-  },
-  "engine": "NOWEB",
-  ...
-}
-label.chat.added
-label.chat.added
-
-{
-  "event": "label.chat.added",
-  "session": "default",
-  "payload": {
-    "labelId": "6",
-    "chatId": "11111111111@c.us",
-    "label": null <=== right after scanning QR it can be null.
-  },
-  "engine": "NOWEB",
-  ...
-}
-label.chat.deleted
-label.chat.deleted
-
-{
-  "event": "label.chat.deleted",
-  "session": "default",
-  "payload": {
-    "labelId": "6",
-    "chatId": "11111111111@c.us",
-    "label": null
-  },
-  "engine": "NOWEB",
-  ...
-}
-call.received
-call.received
-
-{
-  "event": "call.received",
-  "session": "default",
-  "payload": {
-    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "from": "22222222222@c.us",
-    "timestamp": 1721374000,
-    "isVideo": false,
-    "isGroup": false
-  },
-  ...
-}
-call.accepted
-call.accepted
-
-{
-  "event": "call.accepted",
-  "session": "default",
-  "payload": {
-    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "from": "22222222222@c.us",
-    "timestamp": 1721374000,
-    "isVideo": false,
-    "isGroup": false
-  },
-  ...
-}
-call.rejected
-call.rejected
-
-{
-  "event": "call.rejected",
-  "session": "default",
-  "payload": {
-    "id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "from": "22222222222@c.us",
-    "timestamp": 1721374000,
-    "isVideo": false,
-    "isGroup": false
-  },
-  ...
-}
-engine.event
-Low-level engine event, for debug and troubleshooting purposes.
-
-engine.event
-
-{
-  "event": "engine.event",
-  "session": "default",
-  "engine": "NOWEB",
-  "payload": {
-    "event": "messages.upsert",
-    "data": {"":  ""}
-  }
-}
-Deprecated Events
-group.join
-⚠️ DEPRECATED. payload has engine specific data. Use group.v2.leave instead.
-
-group.join
-
-{
-  "event": "group.join",
-  "session": "default",
-  "engine": "WEBJS",
-  "payload": {
-    ...
-  }
-}
-group.leave
-⚠️ DEPRECATED. payload has engine specific data. Use group.v2.leave instead.
-
-group.leave
-
-{
-  "event": "group.leave",
-  "session": "default",
-  "engine": "WEBJS",
-  "payload": {
-    ...
-  }
-}
-state.change
-⚠️ DEPRECATED, use session.status event instead.
-
-It’s an internal engine’s state, not session status.
-
-state.change
-
-{
-  "event": "state.change",
-  "session": "default",
-  "engine": "WEBJS",
-  "payload": {
-    ...
   }
 }

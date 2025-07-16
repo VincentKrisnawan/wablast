@@ -1,6 +1,6 @@
-- build a bussiness logic to sending whatsapp messages to recepient
-- write code to MessageController
-- the button send are alvailable on resources/views/pages/home.blade.php with class 'btn btn-kirim btn-sm'
-- The logic is that from a single message session that has been created contains 100 recipients, in that session there is a name, and also a recipient number. Send a message with a flow every 5 messages the system sends will give a 30-second pause before sending the next message, continuing to repeat until the session is over
-- And for the message template to be sent is in the table messages_templates with the 'template' column, also create a function to call the message to be sent in the database
-- for the records i'm using third party API called WAHA an unofficial whatsapp api used for sending whatsapp messages, the session named 'default' with 'chatId' 6285156796935@c.us
+1. build a view logic to displaying detailed messages was sent, the data are alvailable on messages table.
+2. For each message that has been sent, separate each session and then wrap each session like a dropdown which if clicked will appear a detailed list of the session by displaying a maximum of 10 data, also apply pagination so that it is not too heavy to consume.
+3. you can access all migration file and model to determine the structure.
+4. In the details of each message, display the name, no_hp, date sent (in humanize format) and status, all contained in the database
+5. I've created it on pages.session_details.blade.php, but it still seems to be imperfect, so it doesn't show any data
+6. you should build this code at MessagesInsight controller

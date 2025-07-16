@@ -8,7 +8,7 @@ class Message extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['session_id', 'contact_id', 'message_text', 'status', 'sent_at', 'read_at', 'replied_at'];
+    protected $fillable = ['session_id', 'contact_id', 'message_text', 'status', 'sent_at', 'read_at', 'replied_at', 'waha_message_id', 'from_number', 'to_number'];
 
     public function session()
     {

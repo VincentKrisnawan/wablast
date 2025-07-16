@@ -53,9 +53,18 @@ class MessageController extends Controller
                         'text' => $text,
                     ]);
 
+                    $wahaMessageId = null;
+                    $fromNumber = null;
                     if ($response->successful()) {
                         $status = 'sent';
-                        Log::info("Message sent to {$chatId}: " . $response->body());
+                        $responseData = $response->json();
+
+                        // Correctly extract ID and from_number based on the provided log
+                        $wahaMessageId = $responseData['id']['_serialized'] ?? null;
+                        $fromNumber = $responseData['_data']['from']['_serialized'] ?? null;
+
+                        Log::info("Message sent to {$chatId}. Extracted WAHA ID: {$wahaMessageId}, From: {$fromNumber}");
+
                     } else {
                         Log::error("Failed to send message to {$chatId}: " . $response->status() . " - " . $response->body());
                     }
@@ -69,13 +78,14 @@ class MessageController extends Controller
                     'message_text' => $text,
                     'status' => $status,
                     'sent_at' => now(),
+                    'waha_message_id' => $wahaMessageId,
+                    'from_number' => $fromNumber,
+                    'to_number' => $contact->no_hp,
                 ]);
 
                 $messageCount++;
 
-                if ($messageCount % 5 == 0) {
-                    sleep(rand(4, 6));
-                }
+                sleep(rand(6, 10));
             }
 
             $session->update([

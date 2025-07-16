@@ -59,5 +59,11 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/session/{session}/delete', [HomeController::class, 'destroySession'])->name('session.destroy');
     Route::get('/contacts', [HomeController::class, 'showAllContacts'])->name('contacts.all');
 
+    // Dashboard and Session Details
+    Route::get('/dashboard', [App\Http\Controllers\MessagesInsightController::class, 'dashboard'])->name('dashboard');
+    Route::get('/sessions/{sessionId}/details', [App\Http\Controllers\MessagesInsightController::class, 'sessionDetails'])->name('session.details');
+
 });
+
+
 
