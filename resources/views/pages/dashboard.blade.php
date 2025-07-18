@@ -79,9 +79,6 @@
                                     Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }} - 
                                     Status: <strong class="ms-1">{{ strtoupper($session->status) }}</strong>
                                 </span>
-                                <span class="me-3">
-                                    (Dibaca: {{ $session->read_messages_count }}, Dibalas: {{ $session->replied_messages_count }})
-                                </span>
                             </div>
                         </button>
                     </h2>

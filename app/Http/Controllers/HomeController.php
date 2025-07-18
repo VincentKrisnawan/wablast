@@ -31,9 +31,7 @@ class HomeController extends Controller
             $query->where('user_id', Auth::id());
         })
         ->with('batch') // Eager load data batch untuk setiap sesi
-        ->withCount(['messages' => function ($query) {
-            $query->where('status', 'sent');
-        }])
+        ->withCount('messages') 
         ->latest('id') // Urutkan sesi dari yang paling baru dibuat
         ->paginate(10); // Paginasi 10 sesi per halaman
 

@@ -49,7 +49,9 @@
                                 <tbody>
                                     @forelse ($sessions as $session)
                                     <tr id="session-row-{{ $session->id }}" data-status="{{ $session->status }}">
-                                        <td>Sesi {{ $session->session_number }}</td>
+                                        <td>
+                                            Sesi {{ $sessions->total() - (($sessions->currentPage() - 1) * $sessions->perPage()) - $loop->index }}
+                                        </td>
                                         <td>
                                             @php
                                                 $totalSessionsForThisBatch = ceil($session->batch->total_contacts / 100);
