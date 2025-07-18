@@ -48,8 +48,8 @@
                                 </thead>
                                 <tbody>
                                     @forelse ($sessions as $session)
-                                    <tr id="session-row-{{ $session->id }}">
-                                        <td>Sesi {{ $sessions->total() - (($sessions->currentPage() - 1) * $sessions->perPage()) - $loop->index }}</td>
+                                    <tr id="session-row-{{ $session->id }}" data-status="{{ $session->status }}">
+                                        <td>Sesi {{ $session->session_number }}</td>
                                         <td>
                                             @php
                                                 $totalSessionsForThisBatch = ceil($session->batch->total_contacts / 100);
@@ -65,13 +65,12 @@
                                             @php
                                                 $statusClass = 'status-pending';
                                                 if ($session->status == 'done') $statusClass = 'status-berhasil';
-                                                if ($session->status == 'in progress') $statusClass = 'status-inprogress';
+                                                if ($session->status == 'in_progress') $statusClass = 'status-inprogress';
                                             @endphp
                                             <span class="status {{ $statusClass }}">{{ strtoupper($session->status) }}</span>
                                         </td>
                                         <td>
                                             <button class="btn btn-kirim btn-sm" data-session-id="{{ $session->id }}" @if($session->status != 'pending') disabled @endif>Kirim</button>
-                                            {{-- PERBAIKAN: Hapus onsubmit dan tambahkan class="delete-form" --}}
                                             <form class="delete-form" action="{{ route('session.destroy', $session) }}" method="POST" style="display: inline-block;">
                                                 @csrf
                                                 @method('DELETE')
@@ -260,18 +259,14 @@
                 });
             });
 
-            const allSessionRows = document.querySelectorAll('.data-table tbody tr');
+            const allSessionRows = document.querySelectorAll('tr[data-status="in_progress"]');
             allSessionRows.forEach(row => {
-                const statusSpan = row.querySelector('.status');
-                if (statusSpan && statusSpan.textContent.trim().toUpperCase() === 'IN PROGRESS') {
-                    const button = row.querySelector('.btn-kirim');
-                    if (button) {
-                        button.disabled = true;
-                        button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
-                        
-                        const sessionId = button.dataset.sessionId;
-                        startPolling(sessionId);
-                    }
+                const button = row.querySelector('.btn-kirim');
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
+                    const sessionId = button.dataset.sessionId;
+                    startPolling(sessionId);
                 }
             });
 
