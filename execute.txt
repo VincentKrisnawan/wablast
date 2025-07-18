@@ -1,6 +1,3 @@
-1. build a view logic to displaying detailed messages was sent, the data are alvailable on messages table.
-2. For each message that has been sent, separate each session and then wrap each session like a dropdown which if clicked will appear a detailed list of the session by displaying a maximum of 10 data, also apply pagination so that it is not too heavy to consume.
-3. you can access all migration file and model to determine the structure.
-4. In the details of each message, display the name, no_hp, date sent (in humanize format) and status, all contained in the database
-5. I've created it on pages.session_details.blade.php, but it still seems to be imperfect, so it doesn't show any data
-6. you should build this code at MessagesInsight controller
+1. build a logic feature on /dashboard pages, so authenticated user know how much the messages read and replied.
+2. you can see at the MessagesInsight Controller for the logic and applied it on pages/dashboard.blade.php for the views.
+3. it has already build but it can not see the read and replied messages, you can see the laravel.log for the payload so you can build the right logic, and it could read and replied messages on the dashboard pages.

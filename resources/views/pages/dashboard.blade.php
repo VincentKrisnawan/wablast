@@ -66,8 +66,23 @@
             @forelse ($sessions as $session)
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="heading-{{ $session->id }}">
-                        <button class="accordion-button {{ $activeSession != $session->id ? 'collapsed' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $session->id }}" aria-expanded="{{ $activeSession == $session->id ? 'true' : 'false' }}" aria-controls="collapse-{{ $session->id }}">
-                            Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }} - Status: <span class="fw-bold ms-1">{{ strtoupper($session->status) }}</span>
+                        <button 
+                            class="accordion-button {{ $activeSession == $session->id ? '' : 'collapsed' }}" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#collapse-{{ $session->id }}" 
+                            aria-expanded="{{ $activeSession == $session->id ? 'true' : 'false' }}" 
+                            aria-controls="collapse-{{ $session->id }}"
+                        >
+                            <div class="d-flex justify-content-between w-100">
+                                <span>
+                                    Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }} - 
+                                    Status: <strong class="ms-1">{{ strtoupper($session->status) }}</strong>
+                                </span>
+                                <span class="me-3">
+                                    (Dibaca: {{ $session->read_messages_count }}, Dibalas: {{ $session->replied_messages_count }})
+                                </span>
+                            </div>
                         </button>
                     </h2>
                     <div id="collapse-{{ $session->id }}" class="accordion-collapse collapse {{ $activeSession == $session->id ? 'show' : '' }}" aria-labelledby="heading-{{ $session->id }}" data-bs-parent="#sessionsAccordion">
@@ -88,7 +103,16 @@
                                                 <td>{{ $message->contact->nama ?? 'N/A' }}</td>
                                                 <td>{{ $message->contact->no_hp ?? 'N/A' }}</td>
                                                 <td>{{ $message->sent_at ? \Carbon\Carbon::parse($message->sent_at)->diffForHumans() : 'N/A' }}</td>
-                                                <td><span class="badge bg-light text-dark">{{ $message->status }}</span></td>
+                                                <td>
+                                                    @php
+                                                        $badgeClass = 'bg-secondary'; // Default
+                                                        if ($message->status == 'sent') $badgeClass = 'bg-info';
+                                                        if ($message->status == 'read') $badgeClass = 'bg-success';
+                                                        if ($message->status == 'replied') $badgeClass = 'bg-primary';
+                                                        if ($message->status == 'failed') $badgeClass = 'bg-danger';
+                                                    @endphp
+                                                    <span class="badge {{ $badgeClass }}">{{ strtoupper($message->status) }}</span>
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
@@ -98,9 +122,10 @@
                                     </tbody>
                                 </table>
                             </div>
-                            {{-- Paginasi untuk setiap sesi --}}
                             <div class="d-flex justify-content-center mt-3">
-                                {{ $messages[$session->id]->appends(['session' => $session->id])->links() }}
+                                @if (isset($messages[$session->id]) && $messages[$session->id]->hasPages())
+                                    {{ $messages[$session->id]->appends(['session' => $session->id])->links('components.pagination') }}
+                                @endif
                             </div>
                         </div>
                     </div>
