@@ -18,16 +18,6 @@
                     @csrf
                     <h2>Register</h2>
 
-                    @if ($errors->any())
-                        <div class="error">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
                     <div class="input-group">
                         <label for="name">Username</label>
                         <input type="text" name="name" id="name" required value="{{ old('name') }}">
@@ -48,6 +38,14 @@
                         <input type="password" name="password_confirmation" id="password_confirmation" required>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="error-messages">
+                            @foreach ($errors->all() as $error)
+                                <span>{{ $error }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div class="input-group">
                         <button type="submit">Daftar</button>
                     </div>
@@ -59,7 +57,7 @@
             </div>
         </div>
         <footer class="footer">
-            &copy; {{ date('Y') }} PT KamarOTO Teknologi Indonesia. All rights reserved.
+            &copy; {{ date('Y') }} KamarOTO. All rights reserved.
         </footer>
     </div>
 </body>

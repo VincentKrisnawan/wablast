@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     <link rel="stylesheet" href="{{ asset('css/auth_content.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div class="page-wrapper">
@@ -43,5 +44,16 @@
             &copy; {{ date('Y') }} KamarOTO. All rights reserved.
         </footer>
     </div>
+
+    @error('login')
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal',
+                text: '{{ $message }}',
+                confirmButtonColor: '#6366f1'
+            });
+        </script>
+    @enderror
 </body>
 </html>

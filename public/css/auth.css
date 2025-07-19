@@ -143,6 +143,20 @@ html, body {
     /* border-top: 1px solid #e0e0e0; */
 }
 
+.error-messages {
+    background-color: #fee2e2; /* Latar belakang merah muda */
+    color: #b91c1c;            /* Teks merah tua */
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    border-left: 5px solid #ef4444; /* Garis merah di kiri */
+}
+
+.error-messages span {
+    display: block; /* Setiap pesan error akan berada di baris baru */
+}
+
 /* Responsif */
 @media (max-width: 768px) {
     .main-content {
