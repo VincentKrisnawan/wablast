@@ -1,1 +1,0 @@
-SQLSTATE[01000]: Warning: 1265 Data truncated for column 'status' at row 1 (Connection: mysql, SQL: insert into `messages` (`session_id`, `contact_id`, `message_text`, `status`, `sent_at`, `waha_message_id`, `from_number`, `to_number`) values (3, 21, Ngirim dari docker, READY DEPLOY BOS!!!, failed, 2025-07-19 18:15:40, ?, ?, 6283818796379))

@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./:/var/www
-      - /var/www/vendor
+      - vendor_data:/var/www/vendor
     networks:
       - wablast
 
@@ -20,7 +20,7 @@ services:
     command: php /var/www/artisan queue:work --sleep=3 --tries=3
     volumes:
       - ./:/var/www
-      - /var/www/vendor
+      - vendor_data:/var/www/vendor
     networks:
       - wablast
     depends_on:
@@ -54,6 +54,30 @@ services:
     networks:
       - wablast
 
+  waha:
+    image: devlikeapro/waha
+    container_name: wa-blast-waha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WAHA_BASE_URL: http://localhost:3000
+      WAHA_API_KEY: sha512:c7ad44cbad762a5da0a452f9e854fdc1e0e7a52a38015f23f3eab1d80b931dd472634dfac71cd34ebc35d16ab7fb8a90c81f975113d6c7538dc69dd8de9077ec
+      WAHA_DASHBOARD_ENABLED: "True"
+      WAHA_DASHBOARD_USERNAME: admin
+      WAHA_DASHBOARD_PASSWORD: admin
+      WHATSAPP_SWAGGER_ENABLED: "True"
+      WHATSAPP_SWAGGER_USERNAME: admin
+      WHATSAPP_SWAGGER_PASSWORD: admin
+      WHATSAPP_DEFAULT_ENGINE: WEBJS
+      WAHA_LOG_FORMAT: JSON
+      WAHA_LOG_LEVEL: debug
+      WAHA_PRINT_QR: "False"
+      WHATSAPP_HOOK_URL: https://amazing-causal-tiger.ngrok-free.app/api/waha/webhook
+      WHATSAPP_HOOK_EVENTS: message,message.ack
+    networks:
+      - wablast
+
 networks:
   wablast:
     driver: bridge
@@ -61,3 +85,4 @@ networks:
 volumes:
   dbdata:
     driver: local
+  vendor_data: {}
