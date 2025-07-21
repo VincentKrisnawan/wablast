@@ -1,0 +1,3 @@
+1. analyze the structure and functionality this app for build a proper docker container.
+2. you can access through .env, migration, all files if needed.
+3. you should take a look to Dockerfile, docker-compose.yml. Because if something seems not right you should modify those files.

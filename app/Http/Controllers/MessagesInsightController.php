@@ -123,7 +123,7 @@ class MessagesInsightController extends Controller
             $messagesBySession[$session->id] = Message::where('session_id', $session->id)
                                                       ->with('contact')
                                                       ->latest('sent_at')
-                                                      ->paginate(10, ['*'], 'page_session_' . $session->id);
+                                                      ->paginate(10, ['*'], 'page');
         }
 
         return view('pages.dashboard', [

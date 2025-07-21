@@ -9,12 +9,15 @@
         public function up(): void
     {
         Schema::table('message_templates', function (Blueprint $table) {
-            // Setelah relasi dihapus, baru hapus kolomnya
+            // Check if the column exists before trying to drop it
             if (Schema::hasColumn('message_templates', 'batch_id')) {
+                // Drop the foreign key constraint first
+                $table->dropForeign(['batch_id']);
+                // Then drop the column
                 $table->dropColumn('batch_id');
             }
 
-            // Tambahkan kolom user_id yang baru
+            // Add the new user_id column if it doesn't exist
             if (!Schema::hasColumn('message_templates', 'user_id')) {
                 $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             }

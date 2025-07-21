@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+      target: base
+    container_name: wa-blast-app
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+      - /var/www/vendor
+    networks:
+      - wablast
+
+  queue-worker:
+    build:
+      context: .
+      target: base
+    container_name: wa-blast-worker
+    restart: unless-stopped
+    command: php /var/www/artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - ./:/var/www
+      - /var/www/vendor
+    networks:
+      - wablast
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: wa-blast-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - wablast
+
+  db:
+    image: mysql:8.0
+    container_name: wa-blast-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - wablast
+
+networks:
+  wablast:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local

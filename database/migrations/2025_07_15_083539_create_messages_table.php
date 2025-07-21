@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('session_id')->constrained('message_sessions')->onDelete('cascade');
             $table->foreignId('contact_id')->constrained('upload_contacts')->onDelete('cascade');
             $table->text('message_text');
-            $table->enum('status', ['sent', 'read', 'replied'])->default('sent');
+            $table->enum('status', ['sent', 'read', 'replied', 'failed'])->default('sent');
             $table->timestamp('sent_at')->nullable();
             $table->timestamp('read_at')->nullable();
             $table->timestamp('replied_at')->nullable();
