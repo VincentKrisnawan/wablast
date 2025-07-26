@@ -96,25 +96,31 @@ class MessagesInsightController extends Controller
      */
     public function dashboard(Request $request)
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        $sessionQuery = MessageSession::query();
+        $messageQuery = Message::query();
 
-        $sessionIds = MessageSession::whereHas('batch', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->pluck('id');
+        // Jika user BUKAN admin, filter semua query hanya untuk user tersebut.
+        if ($user->role !== 'admin') {
+            $sessionQuery->whereHas('batch', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+            $messageQuery->whereHas('session.batch', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
 
-        $totalMessages = Message::whereIn('session_id', $sessionIds)->count();
-        $readMessages = Message::whereIn('session_id', $sessionIds)->where('status', 'read')->count();
-        $repliedMessages = Message::whereIn('session_id', $sessionIds)->where('status', 'replied')->count();
-        $sentMessages = $totalMessages - ($readMessages + $repliedMessages);
+        // Ambil ID sesi yang relevan (semua sesi untuk admin, sesi sendiri untuk user)
+        $sessionIds = $sessionQuery->pluck('id');
 
-        $sessions = MessageSession::whereIn('id', $sessionIds)
-                                  ->withCount([
-                                      'messages',
-                                      'messages as read_messages_count' => fn ($q) => $q->where('status', 'read'),
-                                      'messages as replied_messages_count' => fn ($q) => $q->where('status', 'replied'),
-                                  ])
-                                  ->orderBy('session_number', 'asc')
-                                  ->paginate(5);
+        // Hitung statistik berdasarkan query yang sudah difilter
+        $totalMessages = $messageQuery->clone()->whereIn('session_id', $sessionIds)->count();
+        $sentMessages = $messageQuery->clone()->whereIn('session_id', $sessionIds)->where('status', 'sent')->count();
+        $readMessages = $messageQuery->clone()->whereIn('session_id', $sessionIds)->where('status', 'read')->count();
+        $repliedMessages = $messageQuery->clone()->whereIn('session_id', $sessionIds)->where('status', 'replied')->count();
+
+        // Ambil sesi dengan paginasi
+        $sessions = $sessionQuery->clone()->with('batch.user')->orderBy('session_number', 'asc')->paginate(5);
 
         $activeSessionId = $request->query('session', $sessions->first()->id ?? null);
 
@@ -123,7 +129,7 @@ class MessagesInsightController extends Controller
             $messagesBySession[$session->id] = Message::where('session_id', $session->id)
                                                       ->with('contact')
                                                       ->latest('sent_at')
-                                                      ->paginate(10, ['*'], 'page_session_' . $session->id);
+                                                      ->paginate(10, ['*'], 'page_session_'.$session->id);
         }
 
         return view('pages.dashboard', [

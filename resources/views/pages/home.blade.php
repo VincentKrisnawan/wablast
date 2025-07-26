@@ -40,6 +40,9 @@
                                 <thead>
                                     <tr>
                                         <th>Session</th>
+                                        @if(Auth::user()->role === 'admin')
+                                            <th>Uploader</th>
+                                        @endif
                                         <th>Jumlah Kontak</th>
                                         <th>Terkirim</th>
                                         <th>Status</th>
@@ -52,6 +55,9 @@
                                         <td>
                                             Sesi {{ $sessions->total() - (($sessions->currentPage() - 1) * $sessions->perPage()) - $loop->index }}
                                         </td>
+                                            @if(Auth::user()->role === 'admin')
+                                                <td>{{ $session->batch->user->email ?? 'N/A' }}</td>
+                                            @endif
                                         <td>
                                             @php
                                                 $totalSessionsForThisBatch = ceil($session->batch->total_contacts / 100);
@@ -82,8 +88,8 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="5" class="text-center p-4">
-                                            Belum ada sesi. Silakan upload file kontak terlebih dahulu.
+                                        <td colspan="{{ Auth::user()->role === 'admin' ? '7' : '6' }}" class="text-center p-4">
+                                            Belum ada sesi, silahkan upload.
                                         </td>
                                     </tr>
                                     @endforelse
@@ -116,7 +122,7 @@
             </div>
         </div>
 
-        <div class="row mt-4">
+        <!-- <div class="row mt-4">
             <div class="col-12">
                 <div class="card-item bg-light">
                      <h5 class="card-title text-danger">Peringatan!</h5>
@@ -127,7 +133,7 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

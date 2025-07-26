@@ -21,22 +21,23 @@ use App\Jobs\SendSessionMessages;
 
 class HomeController extends Controller
 {
-    /**
-     * Menampilkan halaman utama (dashboard).
-     */
+
     public function index()
     {
-        // PERBAIKAN: Ambil SEMUA sesi milik user yang login, bukan hanya dari batch terakhir.
-        $sessions = MessageSession::whereHas('batch', function ($query) {
-            $query->where('user_id', Auth::id());
+        $user = Auth::user();
+        
+        // PERBAIKAN: Hapus pengecualian untuk admin.
+        // Sekarang, halaman ini akan selalu menampilkan sesi milik pengguna yang sedang login,
+        // baik itu user biasa maupun admin.
+        $sessions = MessageSession::whereHas('batch', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
         })
-        ->with('batch') // Eager load data batch untuk setiap sesi
-        ->withCount('messages') 
-        ->latest('id') // Urutkan sesi dari yang paling baru dibuat
-        ->paginate(10); // Paginasi 10 sesi per halaman
+        ->with('batch.user')
+        ->withCount('messages')
+        ->latest('id')
+        ->paginate(10);
 
-        // Logika untuk template tetap sama, karena terikat pada user
-        $template = MessageTemplate::where('user_id', Auth::id())->first();
+        $template = MessageTemplate::where('user_id', $user->id)->first();
         $templateText = $template ? $template->template : '';
         
         return view('pages.home', [ 
@@ -146,11 +147,20 @@ class HomeController extends Controller
     // ... (sisa method lainnya tidak berubah)
     public function showAllContacts()
     {
-        $contacts = UploadContact::whereHas('batch', function ($query) {
-            $query->where('user_id', Auth::id());
-        })
-        ->orderBy('id', 'desc')
-        ->paginate(10);
+        $user = Auth::user();
+        $query = UploadContact::query();
+
+        // Jika user BUKAN admin, filter kontak hanya untuk user tersebut.
+        if ($user->role !== 'admin') {
+            $query->whereHas('batch', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        // Admin akan melihat semua kontak dari semua user.
+        $contacts = $query->with('batch.user') // Eager load relasi user untuk menampilkan email
+                          ->orderBy('id', 'desc')
+                          ->paginate(10);
 
         return view('pages.lihat-data', [
             'contacts' => $contacts,
@@ -159,38 +169,27 @@ class HomeController extends Controller
 
     public function destroySession(MessageSession $session)
     {
-        if ($session->batch->user_id !== Auth::id()) {
-            return back()->with('error', 'Anda tidak diizinkan menghapus sesi ini.');
+        // HANYA ADMIN YANG BISA MENGHAPUS
+        $user = Auth::user();
+
+        // PERBAIKAN: Izinkan penghapusan jika user adalah admin ATAU pemilik sesi.
+        if ($user->role !== 'admin' && $session->batch->user_id !== $user->id) {
+            return back()->with('error', 'Aksi tidak diizinkan.');
         }
 
+        // Logika penghapusan tetap sama
         DB::beginTransaction();
-
         try {
             $contactsPerSession = 100;
-            
-            // PERBAIKAN: Hitung posisi lokal sesi di dalam batch-nya.
-            // 1. Ambil semua nomor sesi untuk batch ini, diurutkan.
-            $sessionNumbersInBatch = MessageSession::where('batch_id', $session->batch_id)
-                                                    ->orderBy('session_number', 'asc')
-                                                    ->pluck('session_number')
-                                                    ->toArray();
-
-            // 2. Cari indeks (posisi) dari sesi yang akan kita hapus.
+            $sessionNumbersInBatch = MessageSession::where('batch_id', $session->batch_id)->orderBy('session_number', 'asc')->pluck('session_number')->toArray();
             $localIndex = array_search($session->session_number, $sessionNumbersInBatch);
 
             if ($localIndex === false) {
                 throw new \Exception("Sesi tidak ditemukan di dalam batch-nya.");
             }
 
-            // 3. Hitung offset berdasarkan posisi lokal, bukan nomor sesi global.
             $offset = $localIndex * $contactsPerSession;
-
-            // 4. Ambil ID kontak yang akan dihapus berdasarkan batch dan offset yang benar.
-            $contactIdsToDelete = UploadContact::where('batch_id', $session->batch_id)
-                                              ->orderBy('id', 'asc')
-                                              ->skip($offset)
-                                              ->take($contactsPerSession)
-                                              ->pluck('id');
+            $contactIdsToDelete = UploadContact::where('batch_id', $session->batch_id)->orderBy('id', 'asc')->skip($offset)->take($contactsPerSession)->pluck('id');
             
             $deletedCount = 0;
             if ($contactIdsToDelete->isNotEmpty()) {
@@ -204,9 +203,7 @@ class HomeController extends Controller
             $batch->save();
 
             DB::commit();
-
             return redirect()->route('home')->with('success', 'Sesi dan kontaknya berhasil dihapus.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus sesi: ' . $e->getMessage());
@@ -229,6 +226,11 @@ class HomeController extends Controller
 
     public function cleanup()
     {
+        // HANYA ADMIN YANG BISA MERESET
+        if (Auth::user()->role !== 'admin') {
+            return back()->with('error', 'Aksi tidak diizinkan.');
+        }
+
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
             DB::table('upload_contacts')->truncate();
@@ -242,7 +244,6 @@ class HomeController extends Controller
             Storage::disk('public')->makeDirectory('uploads');
 
             return redirect()->route('home')->with('success', 'Semua data dan file berhasil dibersihkan.');
-
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal membersihkan data: ' . $e->getMessage());
         }

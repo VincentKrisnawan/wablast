@@ -76,8 +76,11 @@
                         >
                             <div class="d-flex justify-content-between w-100">
                                 <span>
-                                    Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }} - 
-                                    Status: <strong class="ms-1">{{ strtoupper($session->status) }}</strong>
+                                    Sesi {{ ($sessions->currentPage() - 1) * $sessions->perPage() + $loop->iteration }}
+                                    @if(Auth::user()->role === 'admin')
+                                        <span class="text-muted ms-2">({{ $session->batch->user->email ?? 'N/A' }})</span>
+                                    @endif
+                                    - Status: <span class="fw-bold ms-1">{{ strtoupper($session->status) }}</span>
                                 </span>
                             </div>
                         </button>

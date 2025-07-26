@@ -47,21 +47,28 @@
                                 <th style="width: 5%;">#</th>
                                 <th>Nama</th>
                                 <th>No HP</th>
+                                @if(Auth::user()->role === 'admin')
+                                    <th>Uploader</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($contacts as $index => $contact)
-                                <tr>
-                                    {{-- Menampilkan nomor urut sesuai halaman paginasi --}}
-                                    <td>{{ $contacts->firstItem() + $index }}</td>
-                                    <td>{{ $contact->nama }}</td>
-                                    <td>{{ $contact->no_hp }}</td>
-                                </tr>
+                            <tr>
+                                <td>{{ $contacts->firstItem() + $index }}</td>
+                                <td>{{ $contact->nama }}</td>
+                                <td>{{ $contact->no_hp }}</td>
+                                @if(Auth::user()->role === 'admin')
+                                    <td>{{ $contact->batch->user->email ?? 'N/A' }}</td>
+                                @endif
+                            </tr>
                             @empty
-                                <tr>
-                                    {{-- Menyesuaikan colspan karena kolom lebih sedikit --}}
-                                    <td colspan="3" class="text-center py-4">Tidak ada data kontak yang ditemukan.</td>
-                                </tr>
+                            <tr>
+                                {{-- Sesuaikan colspan --}}
+                                <td colspan="{{ Auth::user()->role === 'admin' ? '4' : '3' }}" class="text-center py-4">
+                                    Tidak ada data kontak yang ditemukan.
+                                </td>
+                            </tr>
                             @endforelse
                         </tbody>
                     </table>
