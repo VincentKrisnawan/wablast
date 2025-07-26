@@ -18,4 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->withProviders([
+        // Exclude Laravel Pail in non-local environments
+        \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+        \Illuminate\View\ViewServiceProvider::class,
+        // ... other core Laravel providers
+    ])
+    ->create();

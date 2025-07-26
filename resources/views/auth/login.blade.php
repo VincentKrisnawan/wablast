@@ -51,7 +51,11 @@
                 icon: 'error',
                 title: 'Login Gagal',
                 text: '{{ $message }}',
+<<<<<<< HEAD
                 confirmButtonColor: '#f97316' // Sesuaikan dengan warna tema Anda
+=======
+                confirmButtonColor: '#6366f1'
+>>>>>>> 86370a7d3f82b3f1cdf290787c9aa61a90652472
             });
         </script>
     @enderror

@@ -1,3 +1,0 @@
-1. build a logic feature on /dashboard pages, so authenticated user know how much the messages read and replied.
-2. you can see at the MessagesInsight Controller for the logic and applied it on pages/dashboard.blade.php for the views.
-3. it has already build but it can not see the read and replied messages, you can see the laravel.log for the payload so you can build the right logic, and it could read and replied messages on the dashboard pages.

@@ -15,7 +15,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // if ($this->app->environment('local')) {
+        //     $this->app->register(\Laravel\Pail\PailServiceProvider::class);
+        // }
     }
 
     /**
@@ -26,14 +28,14 @@ class AppServiceProvider extends ServiceProvider
         // Membuat "View Composer" untuk komponen navbar
         // Kode ini akan berjalan setiap kali view 'components.navbar' akan dirender
         View::composer('components.navbar', function ($view) {
-            
+
             // Hanya jalankan jika user sudah login
             if (Auth::check()) {
                 // Ambil batch upload terakhir milik user yang sedang login
                 $latestBatch = UploadBatch::where('user_id', Auth::id())
                                           ->latest()
                                           ->first();
-                
+
                 // Kirim ID batch (atau null jika tidak ada) ke view navbar
                 $view->with('latest_batch_id', $latestBatch ? $latestBatch->id : null);
             } else {

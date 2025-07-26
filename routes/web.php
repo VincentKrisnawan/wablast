@@ -15,6 +15,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+<<<<<<< HEAD
+=======
+// 2. Definisikan rute untuk menampilkan form login di URL /login dan beri nama 'login'.
+>>>>>>> 86370a7d3f82b3f1cdf290787c9aa61a90652472
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 
