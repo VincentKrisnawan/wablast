@@ -73,9 +73,9 @@ class SendSessionMessages implements ShouldQueue
 
             try {
                 $response = Http::withHeaders([
-                    'X-Api-Key' => 'admin', // Ganti dengan API Key Anda jika perlu
-                ])->post('http://waha:3000/api/sendText', [
-                    'session' => 'default',
+                    'X-Api-Key' => config('waha.api_key'),
+                ])->post(config('waha.api_url'), [
+                    'session' => config('waha.session'),
                     'chatId' => $chatId,
                     'text' => $text,
                 ]);

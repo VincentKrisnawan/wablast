@@ -49,9 +49,9 @@ class MessageController extends Controller
 
                 try {
                     $response = Http::withHeaders([
-                        'X-Api-Key' => 'admin',
-                    ])->post('http://localhost:3000/api/sendText', [
-                        'session' => 'default',
+                        'X-Api-Key' =>  config('waha.api_key'),
+                    ])->post(config('waha.api_url'), [
+                        'session' => config('waha.session'),
                         'chatId' => $chatId,
                         'text' => $text,
                     ]);
