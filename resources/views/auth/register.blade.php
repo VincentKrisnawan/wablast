@@ -18,19 +18,6 @@
                     @csrf
                     <h2>Register</h2>
 
-<<<<<<< HEAD
-                    <!-- @if ($errors->any())
-                        <div class="error">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif -->
-
-=======
->>>>>>> 86370a7d3f82b3f1cdf290787c9aa61a90652472
                     <div class="input-group">
                         <label for="name">Username</label>
                         <input type="text" name="name" id="name" required value="{{ old('name') }}">
