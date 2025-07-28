@@ -6,6 +6,7 @@
     <title>Register - WABLAST</title>
     <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     <link rel="stylesheet" href="{{ asset('css/auth_content.css') }}">
+    <link rel="icon" href="{{ asset('images/head_icon.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
