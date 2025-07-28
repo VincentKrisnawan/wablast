@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Report - WABLAST')
+
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
@@ -7,7 +9,6 @@
 <div class="container py-4">
     <h5 class="mb-4">Dashboard Overview</h5>
 
-    {{-- Kartu Statistik --}}
     <div class="row">
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="stat-card h-100">
@@ -59,7 +60,6 @@
         </div>
     </div>
 
-    {{-- Detail Pesan dengan Accordion --}}
     <div class="mt-4">
         <h5>Detail Pesan Terkirim</h5>
         <div class="accordion" id="sessionsAccordion">
@@ -135,13 +135,11 @@
             @endforelse
         </div>
 
-        {{-- Paginasi untuk sesi --}}
         @if ($sessions->hasPages())
             <x-pagination :paginator="$sessions" />
         @endif
     </div>
 </div>
 
-{{-- PERBAIKAN: Tambahkan Bootstrap JS di sini agar dropdown (accordion) berfungsi --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @endsection
