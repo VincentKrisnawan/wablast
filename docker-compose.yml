@@ -8,6 +8,11 @@ services:
     volumes:
       - ./:/var/www
       - vendor_data:/var/www/vendor
+      - ./docker/php/conf.d/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+    env_file:
+      - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - wablast
 
@@ -21,10 +26,13 @@ services:
     volumes:
       - ./:/var/www
       - vendor_data:/var/www/vendor
+      - ./docker/php/conf.d/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+    env_file:
+      - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - wablast
-    depends_on:
-      - db
 
   nginx:
     image: nginx:alpine
@@ -35,48 +43,6 @@ services:
     volumes:
       - ./:/var/www
       - ./nginx/conf.d/:/etc/nginx/conf.d/
-    networks:
-      - wablast
-
-  db:
-    image: mysql:8.0
-    container_name: wa-blast-db
-    restart: unless-stopped
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    env_file:
-      - ./.env
-    volumes:
-      - dbdata:/var/lib/mysql
-    networks:
-      - wablast
-
-  waha:
-    image: devlikeapro/waha
-    container_name: wa-blast-waha
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      WAHA_BASE_URL: ${WAHA_BASE_URL}
-      WAHA_API_KEY: ${WAHA_API_KEY}
-      WAHA_DASHBOARD_ENABLED: ${WAHA_DASHBOARD_ENABLED}
-      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME}
-      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD}
-      WHATSAPP_SWAGGER_ENABLED: ${WHATSAPP_SWAGGER_ENABLED}
-      WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME}
-      WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD}
-      WHATSAPP_DEFAULT_ENGINE: ${WHATSAPP_DEFAULT_ENGINE}
-      WAHA_LOG_FORMAT: ${WAHA_LOG_FORMAT}
-      WAHA_LOG_LEVEL: ${WAHA_LOG_LEVEL}
-      WAHA_PRINT_QR: ${WAHA_PRINT_QR}
-      WHATSAPP_HOOK_URL: ${WHATSAPP_HOOK_URL}
-      WHATSAPP_HOOK_EVENTS: ${WHATSAPP_HOOK_EVENTS}
     networks:
       - wablast
 

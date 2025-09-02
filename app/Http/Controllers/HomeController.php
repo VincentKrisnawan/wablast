@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 // Import class dari PhpSpreadsheet
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -16,7 +19,7 @@ use App\Models\UploadContact;
 use App\Models\MessageSession;
 use App\Models\MessageTemplate;
 use App\Models\Message;
-
+use App\Jobs\SendSessionImages;
 use App\Jobs\SendSessionMessages;
 
 class HomeController extends Controller
@@ -25,7 +28,7 @@ class HomeController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // PERBAIKAN: Hapus pengecualian untuk admin.
         // Sekarang, halaman ini akan selalu menampilkan sesi milik pengguna yang sedang login,
         // baik itu user biasa maupun admin.
@@ -39,8 +42,8 @@ class HomeController extends Controller
 
         $template = MessageTemplate::where('user_id', $user->id)->first();
         $templateText = $template ? $template->template : '';
-        
-        return view('pages.home', [ 
+
+        return view('pages.home', [
             'sessions' => $sessions,
             'template_text' => $templateText,
         ]);
@@ -59,7 +62,7 @@ class HomeController extends Controller
 
         try {
             $file = $request->file('file_kontak');
-            
+
             $latestBatch = UploadBatch::where('user_id', Auth::id())->latest()->first();
             $createNewBatch = false;
 
@@ -124,7 +127,7 @@ class HomeController extends Controller
             // 4. Perbarui total kontak di batch
             $batch->total_contacts += count($newContacts);
             $batch->save();
-            
+
             // 5. Buat HANYA sesi tambahan yang diperlukan
             $newSessionCount = ceil($batch->total_contacts / 100);
             for ($i = $oldSessionCount + 1; $i <= $newSessionCount; $i++) {
@@ -144,7 +147,6 @@ class HomeController extends Controller
         }
     }
 
-    // ... (sisa method lainnya tidak berubah)
     public function showAllContacts()
     {
         $user = Auth::user();
@@ -190,7 +192,7 @@ class HomeController extends Controller
 
             $offset = $localIndex * $contactsPerSession;
             $contactIdsToDelete = UploadContact::where('batch_id', $session->batch_id)->orderBy('id', 'asc')->skip($offset)->take($contactsPerSession)->pluck('id');
-            
+
             $deletedCount = 0;
             if ($contactIdsToDelete->isNotEmpty()) {
                 $deletedCount = UploadContact::whereIn('id', $contactIdsToDelete)->delete();
@@ -288,5 +290,63 @@ class HomeController extends Controller
         ]);
     }
 
-    
+    public function uploadImageForBlast(Request $request)
+{
+    $v = Validator::make($request->all(), [
+        'image' => ['required','image','mimes:jpeg,png,webp,jpg','max:5120'], // 5MB
+    ]);
+    $v->validate();
+
+    $path = $request->file('image')->store('waha_uploads', 'public'); // storage/app/public/waha_uploads
+    $publicUrl = Storage::disk('public')->url($path);                  // => APP_URL + /storage/...
+
+    return response()->json([
+        'url' => $publicUrl,  // bisa langsung dipakai sebagai file.url utk WAHA
+        'path'=> $path,
+        'message' => 'Image uploaded',
+    ]);
+}
+
+    public function sendSessionImages(Request $request, MessageSession $session)
+    {
+        // Validasi: caption wajib, sumber gambar salah satu (url atau file base64)
+        $v = Validator::make($request->all(), [
+            'caption'     => ['required','string','max:1000'],
+            'mode'        => ['required','in:url,base64'],
+            'image_url'   => ['required_if:mode,url','url'],
+            'image_file'  => ['required_if:mode,base64','image','mimes:jpeg,png,webp,jpg','max:5120'],
+        ], [
+            'image_url.required_if'  => 'URL gambar diperlukan jika mode URL dipilih.',
+            'image_file.required_if' => 'File gambar diperlukan jika mode Base64 dipilih.',
+        ]);
+        $v->validate();
+
+        // Siapkan payload media untuk WAHA
+        $filePayload = null;
+
+        if ($request->mode === 'url') {
+            // Pastikan URL publik bisa dijangkau WAHA (APP_URL harus menuju domain ngrok/prod)
+            $filePayload = [
+                'url'      => $request->image_url,
+                // optional: sertakan mimetype/filename agar rapi
+                'mimetype' => 'image/jpeg',
+                'filename' => basename(parse_url($request->image_url, PHP_URL_PATH) ?: 'image.jpg'),
+            ];
+        } else {
+            // Base64: simpan sementara atau langsung baca & encode
+            $binary = file_get_contents($request->file('image_file')->getRealPath());
+            $filePayload = [
+                'data'     => base64_encode($binary),
+                'mimetype' => $request->file('image_file')->getMimeType(),
+                'filename' => $request->file('image_file')->getClientOriginalName(),
+            ];
+        }
+
+        // Dispatch job asinkron (mirip kirim teks)
+        SendSessionImages::dispatch($session, $filePayload, $request->string('caption'));
+
+        return response()->json(['message' => 'Pengiriman gambar dimulai untuk sesi ini.']);
+    }
+
+
 }

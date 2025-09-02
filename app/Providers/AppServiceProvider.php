@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View; // <-- 1. Import View Facade
 use Illuminate\Support\Facades\Auth; // <-- 2. Import Auth Facade
+use Illuminate\Support\Facades\URL;
 use App\Models\UploadBatch;          // <-- 3. Import UploadBatch Model
 use Illuminate\Pagination\Paginator;
 
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+        URL::forceScheme('https');
+        }
+
         // Membuat "View Composer" untuk komponen navbar
         // Kode ini akan berjalan setiap kali view 'components.navbar' akan dirender
         View::composer('components.navbar', function ($view) {

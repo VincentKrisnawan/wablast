@@ -52,6 +52,9 @@ Route::middleware(['auth'])->group(function () {
     // Route untuk menangani proses upload file
     // Mengarah ke method 'upload' di HomeController
     Route::post('/upload', [HomeController::class, 'upload'])->name('upload.file');
+    Route::post('/upload/image', [HomeController::class, 'uploadImageForBlast'])->name('image.upload');
+
+    Route::post('/session/{session}/send-image', [HomeController::class, 'sendSessionImages'])->name('session.send-image');
 
     // Route untuk menyimpan template pesan
     // Mengarah ke method 'storeTemplate' di HomeController

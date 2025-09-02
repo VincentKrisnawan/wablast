@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'local'),
+    'default' => env('FILESYSTEM_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------
@@ -32,19 +32,18 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'serve' => true,
-            'throw' => false,
-            'report' => false,
+            'root'   => storage_path('app'), // standar laravel
+            'throw'  => false,
         ],
 
+        // Disk publik untuk file yang akan diakses WAHA lewat URL
         'public' => [
-            'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'driver'     => 'local',
+            'root'       => storage_path('app/public'),
+            // gunakan ASSET_URL kalau ada, fallback ke APP_URL, lalu tambahkan /storage
+            'url'        => env('ASSET_URL', env('APP_URL')) .'/storage',
             'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
+            'throw'      => false,
         ],
 
         /*
@@ -81,6 +80,8 @@ return [
     */
 
     'links' => [
+        // SYMLINK WAJIB untuk expose storage publik:
+        public_path('storage') => storage_path('app/public'),
         // PERBAIKAN: Link ini akan membuat public/uploads -> storage/app/public/uploads
         public_path('uploads') => storage_path('app/public/uploads'),
     ],
